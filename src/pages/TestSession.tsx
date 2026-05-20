@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Clock, Flag, X, ChevronRight, Rocket, Loader as Loader2, TriangleAlert as AlertTriangle, Coffee, CircleCheck as CheckCircle2, Circle as XCircle, Eye, Lightbulb, Heart, Forward, Compass } from "lucide-react";
+import { Clock, Flag, X, ChevronRight, Rocket, Loader as Loader2, TriangleAlert as AlertTriangle, Coffee, CircleCheck as CheckCircle2, Circle as XCircle, Cookie } from "lucide-react";
 import { Question, ErrorReason, xpForDifficulty } from "@/lib/novaprep-data";
-import { useNova, xpMultiplierFromBoosts, isQuestionTimeBoost, BoostKind, InventoryItem } from "@/lib/novaprep-store";
+import { useNova } from "@/lib/novaprep-store";
 import { generateQuestions } from "@/lib/generate-questions";
 import { sanitizeMath } from "@/lib/sanitize-math";
 import { toast } from "@/hooks/use-toast";
@@ -58,22 +58,6 @@ const isCorrectAnswer = (q: Question, answer: AnswerValue | undefined) => {
 };
 const answerIndex = (q: Question, answer: AnswerValue | undefined) => typeof answer === "number" ? answer : q.correct;
 
-const buffIcon: Record<string, any> = {
-  fifty_fifty: Eye,
-  hint: Lightbulb,
-  extra_life: Heart,
-  skip_token: Forward,
-  topic_radar: Compass,
-};
-
-const buffLabel: Record<string, string> = {
-  fifty_fifty: "50/50",
-  hint: "Hint",
-  extra_life: "Extra Life",
-  skip_token: "Skip",
-  topic_radar: "Radar",
-};
-
 const TestSession = () => {
   const { mode = "full" } = useParams();
   const m = mode as Mode;
@@ -86,9 +70,6 @@ const TestSession = () => {
   const markTaskComplete = useNova((s) => s.markTaskComplete);
   const syncProfile = useNova((s) => s.syncProfile);
   const mistakes = useNova((s) => s.mistakes);
-  const inventoryRaw = useNova((s) => s.profile?.inventory);
-  const inventory = useMemo(() => inventoryRaw ?? [], [inventoryRaw]);
-  const consumeInventoryItem = useNova((s) => s.consumeInventoryItem);
   const requestedTopic = searchParams.get("topic") ?? undefined;
   const taskLabel = searchParams.get("task") ?? undefined;
   const dayLabel = searchParams.get("day") ?? undefined;
@@ -113,16 +94,10 @@ const TestSession = () => {
   const [breakEndsAt, setBreakEndsAt] = useState<number | null>(null);
   const [breakTick, setBreakTick] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  // Answer key: snapshot of all module-2 / final-module questions + chosen answers
+  const [treatsEarned, setTreatsEarned] = useState(0);
   const [answerKey, setAnswerKey] = useState<{ questions: Question[]; answers: Record<string, AnswerValue> } | null>(null);
-  // For full SAT: also retain module-1 (ELA) questions + answers so the answer key has both sections
   const [moduleOneSnapshot, setModuleOneSnapshot] = useState<{ questions: Question[]; answers: Record<string, AnswerValue> } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  // Question-time buff state
-  const [eliminatedChoices, setEliminatedChoices] = useState<Set<number>>(new Set());
-  const [hintShown, setHintShown] = useState(false);
-  const [extraLifeUsed, setExtraLifeUsed] = useState(false);
-  const [extraLifeMistakeShield, setExtraLifeMistakeShield] = useState(false);
   const currentLimit = m === "full" ? (module === 1 ? 64 * 60 : 70 * 60) : MODULE_LIMIT[m];
   const exerciseName =
     m === "full" ? "Full SAT Simulation" :
