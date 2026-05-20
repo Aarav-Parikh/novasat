@@ -1,0 +1,264 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* NovaSAT — Midnight Ocean Design System
+   All colors in HSL. Tokens drive the entire UI.
+*/
+
+@layer base {
+  :root {
+    /* Midnight blue base */
+    --background: 220 50% 8%;
+    --foreground: 210 20% 95%;
+
+    --card: 220 45% 11%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 220 48% 9%;
+    --popover-foreground: 210 20% 95%;
+
+    /* Coral primary */
+    --primary: 14 90% 60%;
+    --primary-foreground: 220 50% 8%;
+    --primary-glow: 10 95% 70%;
+
+    /* Warm coral secondary */
+    --secondary: 24 95% 58%;
+    --secondary-foreground: 220 50% 8%;
+    --secondary-glow: 20 100% 68%;
+
+    --muted: 220 30% 14%;
+    --muted-foreground: 215 15% 65%;
+
+    --accent: 14 55% 22%;
+    --accent-foreground: 210 25% 96%;
+
+    --destructive: 0 80% 62%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 70% 52%;
+    --warning: 38 95% 62%;
+
+    --border: 220 35% 18%;
+    --input: 220 30% 14%;
+    --ring: 14 90% 60%;
+
+    --radius: 0.875rem;
+
+    --gradient-nebula: linear-gradient(135deg, hsl(14 90% 60% / 0.95), hsl(24 95% 58% / 0.85));
+    --gradient-cosmic:
+      radial-gradient(ellipse 80% 60% at 15% 10%, hsl(280 70% 45% / 0.35), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 90% 20%, hsl(195 90% 50% / 0.28), transparent 60%),
+      radial-gradient(ellipse 90% 70% at 80% 95%, hsl(14 90% 55% / 0.30), transparent 65%),
+      radial-gradient(ellipse 60% 50% at 10% 90%, hsl(330 75% 55% / 0.22), transparent 60%),
+      linear-gradient(180deg, hsl(220 55% 6%) 0%, hsl(230 55% 9%) 50%, hsl(220 50% 7%) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(220 45% 13% / 0.65), hsl(220 50% 8% / 0.45));
+
+    --glow-purple: 0 0 30px hsl(14 90% 60% / 0.5), 0 0 60px hsl(14 90% 60% / 0.25);
+    --glow-cyan: 0 0 30px hsl(24 95% 58% / 0.5), 0 0 60px hsl(24 95% 58% / 0.25);
+    --shadow-deep: 0 20px 60px -20px hsl(220 60% 25% / 0.55);
+
+    --sidebar-background: 220 55% 6%;
+    --sidebar-foreground: 215 18% 80%;
+    --sidebar-primary: 14 90% 60%;
+    --sidebar-primary-foreground: 220 50% 8%;
+    --sidebar-accent: 220 40% 13%;
+    --sidebar-accent-foreground: 210 25% 96%;
+    --sidebar-border: 220 35% 16%;
+    --sidebar-ring: 14 90% 60%;
+
+    --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 220 50% 8%;
+    --foreground: 210 20% 95%;
+    --card: 220 45% 11%;
+    --card-foreground: 210 20% 95%;
+    --popover: 220 48% 9%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 14 90% 60%;
+    --primary-foreground: 220 50% 8%;
+    --secondary: 24 95% 58%;
+    --secondary-foreground: 220 50% 8%;
+    --muted: 220 30% 14%;
+    --muted-foreground: 215 15% 65%;
+    --accent: 14 55% 22%;
+    --accent-foreground: 210 25% 96%;
+    --destructive: 0 80% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 35% 18%;
+    --input: 220 30% 14%;
+    --ring: 14 90% 60%;
+    --sidebar-background: 220 55% 6%;
+    --sidebar-foreground: 215 18% 80%;
+    --sidebar-primary: 14 90% 60%;
+    --sidebar-primary-foreground: 220 50% 8%;
+    --sidebar-accent: 220 40% 13%;
+    --sidebar-accent-foreground: 210 25% 96%;
+    --sidebar-border: 220 35% 16%;
+    --sidebar-ring: 14 90% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body, #root {
+    @apply min-h-screen;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: hsl(var(--background));
+    background-image: var(--gradient-cosmic);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    @apply tracking-tight;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.4);
+    color: hsl(var(--foreground));
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--background)); }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.4);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.7); }
+}
+
+@layer components {
+  /* Glass surface — 1px gradient border via mask */
+  .glass {
+    position: relative;
+    background: var(--gradient-glass);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: var(--radius);
+  }
+  .glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.6), hsl(var(--secondary) / 0.5), hsl(var(--primary) / 0.2));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+  .glass-cyan::before {
+    background: linear-gradient(135deg, hsl(var(--secondary) / 0.7), hsl(var(--secondary) / 0.15));
+  }
+  .glass-purple::before {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.7), hsl(var(--primary) / 0.15));
+  }
+
+  .text-gradient-nebula {
+    background: var(--gradient-nebula);
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+  }
+
+  .glow-purple { box-shadow: var(--glow-purple); }
+  .glow-cyan   { box-shadow: var(--glow-cyan); }
+
+  /* Twinkling stars background layer */
+  .starfield {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, hsl(0 0% 100% / 0.85), transparent 50%),
+      radial-gradient(1px 1px at 70% 80%, hsl(200 70% 80% / 0.8), transparent 50%),
+      radial-gradient(1.5px 1.5px at 40% 60%, hsl(0 0% 100% / 0.6), transparent 50%),
+      radial-gradient(1px 1px at 85% 15%, hsl(14 80% 80% / 0.85), transparent 50%),
+      radial-gradient(1px 1px at 10% 75%, hsl(0 0% 100% / 0.7), transparent 50%),
+      radial-gradient(1.5px 1.5px at 55% 25%, hsl(200 80% 75% / 0.6), transparent 50%),
+      radial-gradient(1px 1px at 90% 60%, hsl(0 0% 100% / 0.8), transparent 50%),
+      radial-gradient(1px 1px at 30% 90%, hsl(14 70% 75% / 0.7), transparent 50%),
+      radial-gradient(2px 2px at 50% 50%, hsl(280 80% 80% / 0.5), transparent 50%),
+      radial-gradient(1.5px 1.5px at 5% 20%, hsl(195 90% 80% / 0.6), transparent 50%);
+    background-size: 800px 800px;
+    animation: twinkle 6s ease-in-out infinite alternate;
+  }
+  .starfield::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background:
+      radial-gradient(ellipse 40% 30% at 20% 30%, hsl(280 80% 55% / 0.18), transparent 70%),
+      radial-gradient(ellipse 35% 25% at 80% 70%, hsl(195 90% 55% / 0.16), transparent 70%),
+      radial-gradient(ellipse 30% 20% at 60% 20%, hsl(14 90% 60% / 0.14), transparent 70%);
+    filter: blur(60px);
+    animation: auroraDrift 22s ease-in-out infinite alternate;
+  }
+  .starfield::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 50%, hsl(0 0% 100% / 0.5), transparent 50%),
+      radial-gradient(1px 1px at 65% 35%, hsl(0 0% 100% / 0.5), transparent 50%),
+      radial-gradient(1px 1px at 80% 90%, hsl(0 0% 100% / 0.5), transparent 50%),
+      radial-gradient(1px 1px at 25% 20%, hsl(0 0% 100% / 0.5), transparent 50%);
+    background-size: 600px 600px;
+    animation: twinkle 9s ease-in-out infinite alternate;
+    animation-delay: -3s;
+  }
+
+  .pulse-glow {
+    animation: pulseGlow 2.6s ease-in-out infinite;
+  }
+
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+  }
+}
+
+@keyframes twinkle {
+  0%   { opacity: 0.55; }
+  100% { opacity: 1; }
+}
+
+@keyframes auroraDrift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); opacity: 0.85; }
+  50%  { transform: translate3d(3%, -2%, 0) scale(1.08); opacity: 1; }
+  100% { transform: translate3d(-2%, 3%, 0) scale(1.04); opacity: 0.9; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.5), 0 0 30px hsl(var(--primary) / 0.4); }
+  50%      { box-shadow: 0 0 0 12px hsl(var(--primary) / 0), 0 0 50px hsl(var(--primary) / 0.7); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes boxShake {
+  0%, 100% { transform: translateX(0); }
+  15%      { transform: translateX(-6px) rotate(-2deg); }
+  30%      { transform: translateX(5px) rotate(1.5deg); }
+  45%      { transform: translateX(-4px) rotate(-1deg); }
+  60%      { transform: translateX(3px) rotate(0.5deg); }
+  75%      { transform: translateX(-2px); }
+}

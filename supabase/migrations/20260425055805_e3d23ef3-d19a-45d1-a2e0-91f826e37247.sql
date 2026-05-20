@@ -1,0 +1,5 @@
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS inventory JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS active_boosts JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS focus_minutes_total INTEGER NOT NULL DEFAULT 0;
