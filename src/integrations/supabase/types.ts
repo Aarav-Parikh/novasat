@@ -139,18 +139,23 @@ export type Database = {
       profiles: {
         Row: {
           active_boosts: Json
+          cosmetics: Json
           created_at: string
           display_name: string | null
+          equipped: Json
           focus_minutes_total: number
           id: string
           inventory: Json
           last_login_at: string | null
           login_count: number
+          pet_energy: number
+          pet_last_decay_at: string
           review_prompt_dismissed: boolean
           sp: number
           streak: number
           target_score: number | null
           test_date: string | null
+          treats: number
           tutorial_completed: boolean
           updated_at: string
           xp: number
@@ -158,18 +163,23 @@ export type Database = {
         }
         Insert: {
           active_boosts?: Json
+          cosmetics?: Json
           created_at?: string
           display_name?: string | null
+          equipped?: Json
           focus_minutes_total?: number
           id: string
           inventory?: Json
           last_login_at?: string | null
           login_count?: number
+          pet_energy?: number
+          pet_last_decay_at?: string
           review_prompt_dismissed?: boolean
           sp?: number
           streak?: number
           target_score?: number | null
           test_date?: string | null
+          treats?: number
           tutorial_completed?: boolean
           updated_at?: string
           xp?: number
@@ -177,18 +187,23 @@ export type Database = {
         }
         Update: {
           active_boosts?: Json
+          cosmetics?: Json
           created_at?: string
           display_name?: string | null
+          equipped?: Json
           focus_minutes_total?: number
           id?: string
           inventory?: Json
           last_login_at?: string | null
           login_count?: number
+          pet_energy?: number
+          pet_last_decay_at?: string
           review_prompt_dismissed?: boolean
           sp?: number
           streak?: number
           target_score?: number | null
           test_date?: string | null
+          treats?: number
           tutorial_completed?: boolean
           updated_at?: string
           xp?: number

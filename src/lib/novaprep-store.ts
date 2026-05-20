@@ -8,65 +8,62 @@ import {
   xpForDifficulty,
 } from "./novaprep-data";
 
-export type BoostKind =
-  | "xp_2x"
-  | "xp_3x"
-  | "sp_2x"
-  | "streak_freeze"
-  | "skip_token"
-  | "hint"
-  | "fifty_fifty"
-  | "extra_life"
-  | "topic_radar";
+// ---------- Pet system ----------
 
-// Question-time buffs can only be used during a test session, not pre-activated
-export const QUESTION_TIME_BUFFS: BoostKind[] = [
-  "fifty_fifty",
-  "hint",
-  "extra_life",
-  "skip_token",
-  "topic_radar",
-];
+export type PetMood = "energetic" | "tired" | "asleep";
+export type CosmeticSlot = "hat" | "neck" | "outfit";
 
-export const isQuestionTimeBoost = (kind: BoostKind) => QUESTION_TIME_BUFFS.includes(kind);
-
-// Buff categories:
-// - "activated": user manually triggers (during test or from inventory)
-// - "instant": auto-applies on acquisition (no user action needed)
-export type BuffCategory = "activated" | "instant";
-
-export const BUFF_CATEGORY: Record<BoostKind, BuffCategory> = {
-  // Instant — auto-applied as soon as you receive them
-  xp_2x: "instant",
-  xp_3x: "instant",
-  sp_2x: "instant",
-  streak_freeze: "instant",
-  // Activated — you click to use them, in test or from inventory
-  fifty_fifty: "activated",
-  hint: "activated",
-  skip_token: "activated",
-  topic_radar: "activated",
-  extra_life: "activated",
-};
-
-const VALID_BOOSTS = new Set<BoostKind>(Object.keys(BUFF_CATEGORY) as BoostKind[]);
-
-export const isInstantBoost = (kind: BoostKind) => BUFF_CATEGORY[kind] === "instant";
-export const isActivatedBoost = (kind: BoostKind) => BUFF_CATEGORY[kind] === "activated";
-
-export interface InventoryItem {
-  id: string; // uuid in JS
-  kind: BoostKind;
+export interface CosmeticItem {
+  id: string;
+  slot: CosmeticSlot;
   label: string;
-  minutes?: number; // for timed boosts
-  acquired_at: string;
+  emoji: string;
+  cost: number;
+  description: string;
 }
 
-export interface ActiveBoost {
-  id: string;
-  kind: BoostKind;
-  label: string;
-  expires_at: string;
+export const COSMETIC_CATALOG: CosmeticItem[] = [
+  { id: "grad_cap", slot: "hat", label: "Graduation Cap", emoji: "🎓", cost: 120, description: "A tiny mortarboard for the diligent scholar." },
+  { id: "beanie", slot: "hat", label: "Study Beanie", emoji: "🧢", cost: 60, description: "Cozy cap for late-night drills." },
+  { id: "wizard_hat", slot: "hat", label: "Wizard Hat", emoji: "🪄", cost: 180, description: "Channels mystical SAT energy." },
+  { id: "scarf", slot: "neck", label: "Collegiate Scarf", emoji: "🧣", cost: 90, description: "Striped scarf in school colors." },
+  { id: "bowtie", slot: "neck", label: "Bowtie", emoji: "🎀", cost: 50, description: "Sharp little bowtie." },
+  { id: "medal", slot: "neck", label: "Gold Medal", emoji: "🥇", cost: 200, description: "Worn by champions of the practice grind." },
+  { id: "uniform", slot: "outfit", label: "School Uniform", emoji: "👔", cost: 250, description: "Tiny blazer and tie." },
+  { id: "hoodie", slot: "outfit", label: "Campus Hoodie", emoji: "🧥", cost: 150, description: "Cozy hoodie for marathon study sessions." },
+  { id: "labcoat", slot: "outfit", label: "Lab Coat", emoji: "🥼", cost: 220, description: "For the future PhD." },
+];
+
+export const moodForEnergy = (energy: number): PetMood => {
+  if (energy >= 75) return "energetic";
+  if (energy >= 25) return "tired";
+  return "asleep";
+};
+
+// 25% drop per 24 hours = proportional decay per ms
+const DECAY_PER_MS = 25 / (24 * 60 * 60 * 1000);
+
+export const computeCurrentEnergy = (
+  storedEnergy: number,
+  lastDecayAt: string,
+): number => {
+  const elapsedMs = Math.max(0, Date.now() - new Date(lastDecayAt).getTime());
+  const decayed = storedEnergy - elapsedMs * DECAY_PER_MS;
+  return Math.max(0, Math.min(100, decayed));
+};
+
+export const spMultiplierFromPet = (mood: PetMood) =>
+  mood === "energetic" ? 1.2 : 1;
+
+export const treatsFromCorrect = (correct: number) =>
+  Math.floor(Math.max(0, correct) / 5);
+
+// ---------- Profile / data shapes ----------
+
+export interface Equipped {
+  hat?: string;
+  neck?: string;
+  outfit?: string;
 }
 
 interface Profile {
@@ -77,16 +74,13 @@ interface Profile {
   xp: number;
   streak: number;
   sp: number;
-  xp_boost_until?: string | null; // legacy, kept for back-compat
-  inventory: InventoryItem[];
-  active_boosts: ActiveBoost[];
   focus_minutes_total: number;
+  pet_energy: number;
+  pet_last_decay_at: string;
+  treats: number;
+  cosmetics: string[];
+  equipped: Equipped;
 }
-
-export type BoxReward =
-  | { type: "sp"; amount: number; label: string }
-  | { type: "xp_boost"; multiplier: 2; minutes: number; label: string }
-  | { type: "boost"; kind: BoostKind; label: string; minutes?: number };
 
 export interface SessionSummary {
   id: string;
@@ -106,32 +100,10 @@ export interface TaskCompletion {
   completed_on: string;
 }
 
-export interface MysteryBox {
-  id: string;
-  level_number: number;
-  tier: "common" | "rare" | "epic" | "legendary";
-  upgrade_clicks_used: number;
-  reward_label: string | null;
-  opened_at: string | null;
-  claimed_at: string | null;
-  reward_payload?: BoxReward | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface StoreItem {
-  id: string;
-  kind: BoostKind;
-  label: string;
-  description: string;
-  cost: number;
-  minutes?: number;
-}
-
 export interface FocusTimerState {
-  duration: number; // seconds
-  endsAt: number | null; // epoch ms when timer should end (null = paused)
-  remaining: number; // last known remaining seconds (for paused state)
+  duration: number;
+  endsAt: number | null;
+  remaining: number;
   running: boolean;
 }
 
@@ -140,7 +112,6 @@ interface NovaState {
   mistakes: MistakeRecord[];
   sessions: SessionSummary[];
   taskCompletions: TaskCompletion[];
-  mysteryBoxes: MysteryBox[];
   loading: boolean;
   focusTimer: FocusTimerState;
   setFocusDuration: (seconds: number) => void;
@@ -149,15 +120,14 @@ interface NovaState {
   resetFocusTimer: () => void;
   completeFocusTimer: () => Promise<number>;
   loadAll: (userId: string) => Promise<void>;
-  updateProfile: (patch: Partial<Pick<Profile, "display_name" | "target_score" | "test_date">>) => Promise<void>;
-  markTaskComplete: (task: { taskKey: string; taskLabel: string; dayLabel: string }) => Promise<void>;
-  syncBoxes: () => Promise<void>;
-  upgradeMysteryBox: (boxId: string) => Promise<MysteryBox | null>;
-  openMysteryBox: (boxId: string) => Promise<BoxReward | null>;
-  buyStoreItem: (item: StoreItem) => Promise<boolean>;
-  activateInventoryItem: (itemId: string) => Promise<boolean>;
-  consumeInventoryItem: (itemId: string) => Promise<boolean>;
-  pruneExpiredBoosts: () => Promise<void>;
+  updateProfile: (
+    patch: Partial<Pick<Profile, "display_name" | "target_score" | "test_date">>,
+  ) => Promise<void>;
+  markTaskComplete: (task: {
+    taskKey: string;
+    taskLabel: string;
+    dayLabel: string;
+  }) => Promise<void>;
   awardFocusXP: (minutes: number) => Promise<number>;
   recordMistake: (m: {
     question: Question;
@@ -173,111 +143,52 @@ interface NovaState {
     total: number;
     duration: number;
     xpEarned: number;
-  }) => Promise<void>;
+  }) => Promise<{ treatsAwarded: number; spAwarded: number } | void>;
   resolveMistake: (id: string) => Promise<void>;
   claimDailySP: (amount: number) => Promise<boolean>;
+  // Pet
+  syncPetDecay: () => Promise<void>;
+  feedPet: (treats: number) => Promise<boolean>;
+  buyCosmetic: (cosmeticId: string) => Promise<boolean>;
+  equipCosmetic: (slot: CosmeticSlot, cosmeticId: string | null) => Promise<boolean>;
   reset: () => void;
 }
 
 const todayDate = () => new Date().toISOString().slice(0, 10);
-const uid = () =>
-  (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
 const dedupeMistakes = (mistakes: MistakeRecord[]) =>
   Array.from(
     new Map(
-      mistakes.map((mistake) => [
-        `${mistake.section}::${mistake.topic}::${mistake.prompt}`,
-        mistake,
-      ]),
+      mistakes.map((m) => [`${m.section}::${m.topic}::${m.prompt}`, m]),
     ).values(),
   );
-
-const REMOVED_BOOSTS = new Set<BoostKind>(["skip_token", "topic_radar", "extra_life"]);
 
 const normalizeProfile = (raw: any): Profile | null => {
   if (!raw) return null;
   return {
-    ...raw,
-    inventory: Array.isArray(raw.inventory) ? (raw.inventory as InventoryItem[]).filter((item) => VALID_BOOSTS.has(item.kind) && !REMOVED_BOOSTS.has(item.kind)) : [],
-    active_boosts: Array.isArray(raw.active_boosts) ? (raw.active_boosts as ActiveBoost[]).filter((boost) => VALID_BOOSTS.has(boost.kind) && !REMOVED_BOOSTS.has(boost.kind)) : [],
-    focus_minutes_total: raw.focus_minutes_total ?? 0,
+    id: raw.id,
+    display_name: raw.display_name ?? null,
+    target_score: raw.target_score ?? null,
+    test_date: raw.test_date ?? null,
+    xp: raw.xp ?? 0,
+    streak: raw.streak ?? 0,
     sp: raw.sp ?? 0,
+    focus_minutes_total: raw.focus_minutes_total ?? 0,
+    pet_energy: typeof raw.pet_energy === "number" ? raw.pet_energy : 100,
+    pet_last_decay_at: raw.pet_last_decay_at ?? new Date().toISOString(),
+    treats: raw.treats ?? 0,
+    cosmetics: Array.isArray(raw.cosmetics) ? (raw.cosmetics as string[]) : [],
+    equipped:
+      raw.equipped && typeof raw.equipped === "object"
+        ? (raw.equipped as Equipped)
+        : {},
   };
-};
-
-const filterLiveBoosts = (list: ActiveBoost[]) =>
-  list.filter((b) => new Date(b.expires_at).getTime() > Date.now());
-
-export const xpMultiplierFromBoosts = (boosts: ActiveBoost[]) => {
-  const live = filterLiveBoosts(boosts);
-  if (live.some((b) => b.kind === "xp_3x")) return 3;
-  if (live.some((b) => b.kind === "xp_2x")) return 2;
-  return 1;
-};
-
-export const spMultiplierFromBoosts = (boosts: ActiveBoost[]) =>
-  filterLiveBoosts(boosts).some((b) => b.kind === "sp_2x") ? 2 : 1;
-
-const hasLiveBoost = (boosts: ActiveBoost[], kind: BoostKind) =>
-  filterLiveBoosts(boosts).some((boost) => boost.kind === kind);
-
-const rewardForTier = (tier: MysteryBox["tier"]): BoxReward => {
-  const roll = Math.random();
-  if (tier === "common") {
-    if (roll < 0.40) return { type: "sp", amount: 5, label: "5 SP" };
-    if (roll < 0.65) return { type: "xp_boost", multiplier: 2, minutes: 10, label: "2x XP · 10 min" };
-    if (roll < 0.82) return { type: "boost", kind: "hint", label: "Hint Token" };
-    if (roll < 0.94) return { type: "boost", kind: "fifty_fifty", label: "50/50 Eliminator" };
-    return { type: "boost", kind: "streak_freeze", label: "Streak Freeze" };
-  }
-  if (tier === "rare") {
-    if (roll < 0.30) return { type: "sp", amount: 10, label: "10 SP" };
-    if (roll < 0.55) return { type: "xp_boost", multiplier: 2, minutes: 20, label: "2x XP · 20 min" };
-    if (roll < 0.72) return { type: "boost", kind: "fifty_fifty", label: "50/50 Eliminator" };
-    if (roll < 0.86) return { type: "boost", kind: "streak_freeze", label: "Streak Freeze" };
-    return { type: "sp", amount: 20, label: "20 SP" };
-  }
-  if (tier === "epic") {
-    if (roll < 0.30) return { type: "sp", amount: 20, label: "20 SP" };
-    if (roll < 0.55) return { type: "xp_boost", multiplier: 2, minutes: 30, label: "2x XP · 30 min" };
-    if (roll < 0.75) return { type: "boost", kind: "fifty_fifty", label: "50/50 Eliminator" };
-    if (roll < 0.88) return { type: "boost", kind: "streak_freeze", label: "Streak Freeze" };
-    return { type: "sp", amount: 40, label: "40 SP" };
-  }
-  // Legendary
-  if (roll < 0.25) return { type: "sp", amount: 40, label: "40 SP" };
-  if (roll < 0.50) return { type: "xp_boost", multiplier: 2, minutes: 60, label: "2x XP · 1 hr" };
-  if (roll < 0.70) return { type: "boost", kind: "xp_3x", label: "3x XP · 30 min", minutes: 30 };
-  if (roll < 0.88) return { type: "boost", kind: "fifty_fifty", label: "50/50 Eliminator" };
-  return { type: "boost", kind: "sp_2x", label: "2x SP · 30 min", minutes: 30 };
-};
-
-const inventoryFromReward = (reward: BoxReward): InventoryItem | null => {
-  if (reward.type === "xp_boost") {
-    return {
-      id: uid(),
-      kind: "xp_2x",
-      label: reward.label,
-      minutes: reward.minutes,
-      acquired_at: new Date().toISOString(),
-    };
-  }
-  if (reward.type === "boost") {
-    return {
-      id: uid(),
-      kind: reward.kind,
-      label: reward.label,
-      minutes: reward.minutes,
-      acquired_at: new Date().toISOString(),
-    };
-  }
-  return null;
 };
 
 const FOCUS_KEY = "novaprep:focus-timer";
 const loadFocus = (): FocusTimerState => {
-  if (typeof window === "undefined") return { duration: 25 * 60, endsAt: null, remaining: 25 * 60, running: false };
+  if (typeof window === "undefined")
+    return { duration: 25 * 60, endsAt: null, remaining: 25 * 60, running: false };
   try {
     const raw = window.localStorage.getItem(FOCUS_KEY);
     if (raw) {
@@ -292,7 +203,9 @@ const loadFocus = (): FocusTimerState => {
   return { duration: 25 * 60, endsAt: null, remaining: 25 * 60, running: false };
 };
 const saveFocus = (f: FocusTimerState) => {
-  try { window.localStorage.setItem(FOCUS_KEY, JSON.stringify(f)); } catch {}
+  try {
+    window.localStorage.setItem(FOCUS_KEY, JSON.stringify(f));
+  } catch {}
 };
 
 export const useNova = create<NovaState>((set, get) => ({
@@ -300,32 +213,48 @@ export const useNova = create<NovaState>((set, get) => ({
   mistakes: [],
   sessions: [],
   taskCompletions: [],
-  mysteryBoxes: [],
   loading: false,
   focusTimer: loadFocus(),
 
   setFocusDuration: (seconds) => {
-    const f: FocusTimerState = { duration: seconds, endsAt: null, remaining: seconds, running: false };
+    const f: FocusTimerState = {
+      duration: seconds,
+      endsAt: null,
+      remaining: seconds,
+      running: false,
+    };
     saveFocus(f);
     set({ focusTimer: f });
   },
   startFocusTimer: () => {
     const cur = get().focusTimer;
     const remaining = cur.remaining > 0 ? cur.remaining : cur.duration;
-    const f: FocusTimerState = { ...cur, remaining, endsAt: Date.now() + remaining * 1000, running: true };
+    const f: FocusTimerState = {
+      ...cur,
+      remaining,
+      endsAt: Date.now() + remaining * 1000,
+      running: true,
+    };
     saveFocus(f);
     set({ focusTimer: f });
   },
   pauseFocusTimer: () => {
     const cur = get().focusTimer;
-    const remaining = cur.endsAt ? Math.max(0, Math.round((cur.endsAt - Date.now()) / 1000)) : cur.remaining;
+    const remaining = cur.endsAt
+      ? Math.max(0, Math.round((cur.endsAt - Date.now()) / 1000))
+      : cur.remaining;
     const f: FocusTimerState = { ...cur, remaining, endsAt: null, running: false };
     saveFocus(f);
     set({ focusTimer: f });
   },
   resetFocusTimer: () => {
     const cur = get().focusTimer;
-    const f: FocusTimerState = { duration: cur.duration, endsAt: null, remaining: cur.duration, running: false };
+    const f: FocusTimerState = {
+      duration: cur.duration,
+      endsAt: null,
+      remaining: cur.duration,
+      running: false,
+    };
     saveFocus(f);
     set({ focusTimer: f });
   },
@@ -333,7 +262,12 @@ export const useNova = create<NovaState>((set, get) => ({
     const cur = get().focusTimer;
     const minutes = Math.max(1, Math.floor(cur.duration / 60));
     const xp = await get().awardFocusXP(minutes);
-    const f: FocusTimerState = { duration: cur.duration, endsAt: null, remaining: 0, running: false };
+    const f: FocusTimerState = {
+      duration: cur.duration,
+      endsAt: null,
+      remaining: 0,
+      running: false,
+    };
     saveFocus(f);
     set({ focusTimer: f });
     return xp;
@@ -342,46 +276,71 @@ export const useNova = create<NovaState>((set, get) => ({
   loadAll: async (userId) => {
     set({ loading: true });
     const today = todayDate();
-    const [profileRes, mistakesRes, sessionsRes, taskCompletionsRes, mysteryBoxesRes] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
-      supabase.from("mistakes").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
-      supabase.from("sessions").select("id,created_at,score,total,duration_seconds,mode,xp_earned").eq("user_id", userId).order("created_at", { ascending: false }).limit(100),
-      supabase.from("task_completions").select("id,task_key,task_label,day_label,completed_on").eq("user_id", userId).eq("completed_on", today),
-      supabase.from("mystery_boxes").select("id,level_number,tier,upgrade_clicks_used,reward_label,opened_at,claimed_at,reward_payload,created_at,updated_at").eq("user_id", userId).order("level_number", { ascending: false }),
-    ]);
+    const [profileRes, mistakesRes, sessionsRes, taskCompletionsRes] =
+      await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+        supabase
+          .from("mistakes")
+          .select("*")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(200),
+        supabase
+          .from("sessions")
+          .select("id,created_at,score,total,duration_seconds,mode,xp_earned")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(100),
+        supabase
+          .from("task_completions")
+          .select("id,task_key,task_label,day_label,completed_on")
+          .eq("user_id", userId)
+          .eq("completed_on", today),
+      ]);
 
     set({
       profile: normalizeProfile(profileRes.data),
       mistakes: dedupeMistakes(((mistakesRes.data as MistakeRecord[]) ?? [])),
       sessions: (sessionsRes.data as SessionSummary[]) ?? [],
       taskCompletions: (taskCompletionsRes.data as TaskCompletion[]) ?? [],
-      mysteryBoxes: (mysteryBoxesRes.data as MysteryBox[]) ?? [],
       loading: false,
     });
 
     if (profileRes.data) {
-      // Streak reset: if last session is older than 1 day, zero out streak
-      const lastSessionDate = (sessionsRes.data as SessionSummary[] | null)?.[0]?.created_at?.slice(0, 10);
+      // Streak reset
+      const lastSessionDate = (sessionsRes.data as SessionSummary[] | null)?.[0]
+        ?.created_at?.slice(0, 10);
       const currentStreak = (profileRes.data as any).streak ?? 0;
       if (currentStreak > 0) {
         const todayMs = new Date(`${today}T00:00:00`).getTime();
-        const lastMs = lastSessionDate ? new Date(`${lastSessionDate}T00:00:00`).getTime() : null;
-        const diffDays = lastMs === null ? Infinity : Math.round((todayMs - lastMs) / 86400000);
-        if (diffDays > 1 && !hasLiveBoost((profileRes.data as any).active_boosts ?? [], "streak_freeze")) {
+        const lastMs = lastSessionDate
+          ? new Date(`${lastSessionDate}T00:00:00`).getTime()
+          : null;
+        const diffDays =
+          lastMs === null ? Infinity : Math.round((todayMs - lastMs) / 86400000);
+        if (diffDays > 1) {
           const { data: zeroed } = await supabase
-            .from("profiles").update({ streak: 0 }).eq("id", userId).select().single();
+            .from("profiles")
+            .update({ streak: 0 })
+            .eq("id", userId)
+            .select()
+            .single();
           if (zeroed) set({ profile: normalizeProfile(zeroed) });
         }
       }
-      await get().syncBoxes();
-      await get().pruneExpiredBoosts();
+      await get().syncPetDecay();
     }
   },
 
   updateProfile: async (patch) => {
     const profile = get().profile;
     if (!profile) return;
-    const { data } = await supabase.from("profiles").update(patch).eq("id", profile.id).select().single();
+    const { data } = await supabase
+      .from("profiles")
+      .update(patch)
+      .eq("id", profile.id)
+      .select()
+      .single();
     if (data) set({ profile: normalizeProfile(data) });
   },
 
@@ -407,209 +366,21 @@ export const useNova = create<NovaState>((set, get) => ({
     if (!error && data) {
       set((state) => ({
         taskCompletions: Array.from(
-          new Map([data as TaskCompletion, ...state.taskCompletions].map((item) => [item.task_key, item])).values(),
+          new Map(
+            [data as TaskCompletion, ...state.taskCompletions].map((item) => [
+              item.task_key,
+              item,
+            ]),
+          ).values(),
         ),
       }));
     }
   },
 
-  syncBoxes: async () => {
-    const profile = get().profile;
-    if (!profile) return;
-
-    const unlockedLevels = Math.max(1, Math.floor(profile.xp / 500) + 1);
-    const existingLevels = new Set(get().mysteryBoxes.map((box) => box.level_number));
-    // Always include level 0 as the free starter box
-    const allLevels = [0, ...Array.from({ length: unlockedLevels }, (_, index) => index + 1)];
-    const missingLevels = allLevels.filter((level) => !existingLevels.has(level));
-
-    if (missingLevels.length > 0) {
-      await supabase.from("mystery_boxes").insert(
-        missingLevels.map((level) => ({
-          user_id: profile.id,
-          level_number: level,
-          tier: level === 0 ? "rare" as const : "common" as const,
-          reward_label: level === 0 ? "Starter Box" : `Level ${level} Mystery Box`,
-        })),
-      );
-    }
-
-    const { data } = await supabase
-      .from("mystery_boxes")
-      .select("id,level_number,tier,upgrade_clicks_used,reward_label,opened_at,claimed_at,reward_payload,created_at,updated_at")
-      .eq("user_id", profile.id)
-      .order("level_number", { ascending: false });
-
-    set({ mysteryBoxes: (data as MysteryBox[]) ?? [] });
-  },
-
-  upgradeMysteryBox: async (boxId) => {
-    const box = get().mysteryBoxes.find((entry) => entry.id === boxId);
-    if (!box || box.upgrade_clicks_used >= 3) return null;
-
-    const roll = Math.random();
-    let nextTier = box.tier;
-    if (box.tier === "common" && roll < 0.3) nextTier = "rare";
-    else if (box.tier === "rare" && roll < 0.15) nextTier = "epic";
-    else if (box.tier === "epic" && roll < 0.05) nextTier = "legendary";
-
-    const { data, error } = await supabase
-      .from("mystery_boxes")
-      .update({
-        tier: nextTier,
-        upgrade_clicks_used: box.upgrade_clicks_used + 1,
-      })
-      .eq("id", boxId)
-      .select("id,level_number,tier,upgrade_clicks_used,reward_label,opened_at,claimed_at,reward_payload,created_at,updated_at")
-      .single();
-
-    if (!error && data) {
-      set((state) => ({
-        mysteryBoxes: state.mysteryBoxes.map((entry) => (entry.id === boxId ? (data as MysteryBox) : entry)),
-      }));
-      return data as MysteryBox;
-    }
-
-    return null;
-  },
-
-  openMysteryBox: async (boxId) => {
-    const profile = get().profile;
-    const box = get().mysteryBoxes.find((entry) => entry.id === boxId);
-    if (!profile || !box || box.reward_payload || box.claimed_at) return null;
-
-    const reward = rewardForTier(box.tier);
-    const inventoryItem = inventoryFromReward(reward);
-    const nextInventory = inventoryItem ? [...profile.inventory, inventoryItem] : profile.inventory;
-    const spMultiplier = spMultiplierFromBoosts(profile.active_boosts);
-    const patch: any =
-      reward.type === "sp"
-        ? { sp: profile.sp + reward.amount * spMultiplier }
-        : { inventory: nextInventory };
-
-    const [{ data: updatedBox, error }, { data: updatedProfile }] = await Promise.all([
-      supabase
-        .from("mystery_boxes")
-        .update({ reward_payload: reward as any, opened_at: new Date().toISOString(), claimed_at: new Date().toISOString() } as any)
-        .eq("id", boxId)
-        .select("id,level_number,tier,upgrade_clicks_used,reward_label,opened_at,claimed_at,reward_payload,created_at,updated_at")
-        .single(),
-      supabase.from("profiles").update(patch).eq("id", profile.id).select().single(),
-    ]);
-
-    if (!error && updatedBox) {
-      set((state) => ({
-        profile: normalizeProfile(updatedProfile) ?? state.profile,
-        mysteryBoxes: state.mysteryBoxes.map((entry) => (entry.id === boxId ? (updatedBox as MysteryBox) : entry)),
-      }));
-      return reward;
-    }
-    return null;
-  },
-
-  buyStoreItem: async (item) => {
-    const profile = get().profile;
-    if (!profile || profile.sp < item.cost) return false;
-    const inventoryItem: InventoryItem = {
-      id: uid(),
-      kind: item.kind,
-      label: item.label,
-      minutes: item.minutes,
-      acquired_at: new Date().toISOString(),
-    };
-    const { data } = await supabase
-      .from("profiles")
-      .update({ sp: profile.sp - item.cost, inventory: [...profile.inventory, inventoryItem] } as any)
-      .eq("id", profile.id)
-      .select()
-      .single();
-    if (data) {
-      set({ profile: normalizeProfile(data) });
-      return true;
-    }
-    return false;
-  },
-
-  activateInventoryItem: async (itemId) => {
-    const profile = get().profile;
-    if (!profile) return false;
-    const item = profile.inventory.find((i) => i.id === itemId);
-    if (!item) return false;
-
-    // Question-time buffs cannot be pre-activated
-    if (isQuestionTimeBoost(item.kind)) return false;
-
-    const liveBoosts = filterLiveBoosts(profile.active_boosts);
-    if (liveBoosts.length >= 3) return false;
-
-    let nextActive = liveBoosts;
-    if (item.minutes) {
-      nextActive = [
-        ...liveBoosts,
-        {
-          id: item.id,
-          kind: item.kind,
-          label: item.label,
-          expires_at: new Date(Date.now() + item.minutes * 60_000).toISOString(),
-        },
-      ];
-    }
-
-    const nextInventory = profile.inventory.filter((i) => i.id !== itemId);
-
-    const { data } = await supabase
-      .from("profiles")
-      .update({ inventory: nextInventory, active_boosts: nextActive } as any)
-      .eq("id", profile.id)
-      .select()
-      .single();
-    if (data) {
-      set({ profile: normalizeProfile(data) });
-      return true;
-    }
-    return false;
-  },
-
-  consumeInventoryItem: async (itemId) => {
-    const profile = get().profile;
-    if (!profile) return false;
-    const item = profile.inventory.find((i) => i.id === itemId);
-    if (!item) return false;
-
-    const nextInventory = profile.inventory.filter((i) => i.id !== itemId);
-
-    const { data } = await supabase
-      .from("profiles")
-      .update({ inventory: nextInventory } as any)
-      .eq("id", profile.id)
-      .select()
-      .single();
-    if (data) {
-      set({ profile: normalizeProfile(data) });
-      return true;
-    }
-    return false;
-  },
-
-  pruneExpiredBoosts: async () => {
-    const profile = get().profile;
-    if (!profile) return;
-    const live = filterLiveBoosts(profile.active_boosts);
-    if (live.length === profile.active_boosts.length) return;
-    const { data } = await supabase
-      .from("profiles")
-      .update({ active_boosts: live } as any)
-      .eq("id", profile.id)
-      .select()
-      .single();
-    if (data) set({ profile: normalizeProfile(data) });
-  },
-
   awardFocusXP: async (minutes) => {
     const profile = get().profile;
     if (!profile) return 0;
-    const mult = xpMultiplierFromBoosts(profile.active_boosts);
-    const gained = Math.round(minutes * 3 * mult);
+    const gained = Math.round(minutes * 3);
     const { data } = await supabase
       .from("profiles")
       .update({
@@ -619,10 +390,7 @@ export const useNova = create<NovaState>((set, get) => ({
       .eq("id", profile.id)
       .select()
       .single();
-    if (data) {
-      set({ profile: normalizeProfile(data) });
-      await get().syncBoxes();
-    }
+    if (data) set({ profile: normalizeProfile(data) });
     return gained;
   },
 
@@ -659,7 +427,9 @@ export const useNova = create<NovaState>((set, get) => ({
       .single();
 
     if (!error && data) {
-      set((state) => ({ mistakes: dedupeMistakes([data as MistakeRecord, ...state.mistakes]) }));
+      set((state) => ({
+        mistakes: dedupeMistakes([data as MistakeRecord, ...state.mistakes]),
+      }));
     }
   },
 
@@ -667,16 +437,17 @@ export const useNova = create<NovaState>((set, get) => ({
     const profile = get().profile;
     if (!profile) return 0;
 
-    const baseXP = xpForDifficulty(difficulty);
-    const mult = xpMultiplierFromBoosts(profile.active_boosts);
-    const gained = baseXP * mult;
-    // Optimistic local update — DB sync deferred to recordSession to avoid
-    // dozens of round-trips when a drill is graded in bulk.
-    set({ profile: { ...profile, xp: profile.xp + gained, streak: Math.max(1, profile.streak || 0) } });
+    const gained = xpForDifficulty(difficulty);
+    set({
+      profile: {
+        ...profile,
+        xp: profile.xp + gained,
+        streak: Math.max(1, profile.streak || 0),
+      },
+    });
     return gained;
   },
 
-  // Force a full profile re-sync from the database
   syncProfile: async () => {
     const profile = get().profile;
     if (!profile) return;
@@ -713,14 +484,31 @@ export const useNova = create<NovaState>((set, get) => ({
     else if (!lastSessionDate) nextStreak = 1;
     else {
       const diffDays = Math.round(
-        (new Date(`${today}T00:00:00`).getTime() - new Date(`${lastSessionDate}T00:00:00`).getTime()) / 86400000,
+        (new Date(`${today}T00:00:00`).getTime() -
+          new Date(`${lastSessionDate}T00:00:00`).getTime()) /
+          86400000,
       );
-      nextStreak = diffDays === 1 ? nextStreak + 1 : hasLiveBoost(profile.active_boosts, "streak_freeze") ? Math.max(1, nextStreak) : 1;
+      nextStreak = diffDays === 1 ? nextStreak + 1 : 1;
     }
+
+    // Pet-driven SP multiplier
+    const mood = moodForEnergy(
+      computeCurrentEnergy(profile.pet_energy, profile.pet_last_decay_at),
+    );
+    const spMult = spMultiplierFromPet(mood);
+    const spAwarded = Math.round(5 * spMult);
+
+    // Treats: 1 per 5 correct (only when not a review redo)
+    const treatsAwarded = mode === "review" ? 0 : treatsFromCorrect(score);
 
     const { data: updatedProfile } = await supabase
       .from("profiles")
-      .update({ streak: nextStreak, xp: profile.xp, sp: profile.sp + 5 })
+      .update({
+        streak: nextStreak,
+        xp: profile.xp,
+        sp: profile.sp + spAwarded,
+        treats: profile.treats + treatsAwarded,
+      })
       .eq("id", profile.id)
       .select()
       .single();
@@ -730,16 +518,7 @@ export const useNova = create<NovaState>((set, get) => ({
       profile: normalizeProfile(updatedProfile) ?? state.profile,
     }));
 
-    // Re-fetch profile from DB to get authoritative XP value and sync boxes
-    const { data: freshProfile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", profile.id)
-      .maybeSingle();
-    if (freshProfile) {
-      set({ profile: normalizeProfile(freshProfile) });
-      await get().syncBoxes();
-    }
+    return { treatsAwarded, spAwarded };
   },
 
   resolveMistake: async (id) => {
@@ -788,13 +567,106 @@ export const useNova = create<NovaState>((set, get) => ({
     return false;
   },
 
+  // ---------- Pet ----------
+
+  syncPetDecay: async () => {
+    const profile = get().profile;
+    if (!profile) return;
+    const current = computeCurrentEnergy(
+      profile.pet_energy,
+      profile.pet_last_decay_at,
+    );
+    // Persist if the displayed energy materially drifted from the stored value
+    if (Math.abs(current - profile.pet_energy) >= 1) {
+      const { data } = await supabase
+        .from("profiles")
+        .update({
+          pet_energy: Math.round(current),
+          pet_last_decay_at: new Date().toISOString(),
+        })
+        .eq("id", profile.id)
+        .select()
+        .single();
+      if (data) set({ profile: normalizeProfile(data) });
+    }
+  },
+
+  feedPet: async (treats) => {
+    const profile = get().profile;
+    if (!profile) return false;
+    const n = Math.max(1, Math.floor(treats));
+    if (profile.treats < n) return false;
+    const current = computeCurrentEnergy(
+      profile.pet_energy,
+      profile.pet_last_decay_at,
+    );
+    const nextEnergy = Math.min(100, current + n * 5);
+    const { data } = await supabase
+      .from("profiles")
+      .update({
+        treats: profile.treats - n,
+        pet_energy: Math.round(nextEnergy),
+        pet_last_decay_at: new Date().toISOString(),
+      })
+      .eq("id", profile.id)
+      .select()
+      .single();
+    if (data) {
+      set({ profile: normalizeProfile(data) });
+      return true;
+    }
+    return false;
+  },
+
+  buyCosmetic: async (cosmeticId) => {
+    const profile = get().profile;
+    if (!profile) return false;
+    const item = COSMETIC_CATALOG.find((c) => c.id === cosmeticId);
+    if (!item) return false;
+    if (profile.cosmetics.includes(cosmeticId)) return false;
+    if (profile.sp < item.cost) return false;
+    const { data } = await supabase
+      .from("profiles")
+      .update({
+        sp: profile.sp - item.cost,
+        cosmetics: [...profile.cosmetics, cosmeticId],
+      } as any)
+      .eq("id", profile.id)
+      .select()
+      .single();
+    if (data) {
+      set({ profile: normalizeProfile(data) });
+      return true;
+    }
+    return false;
+  },
+
+  equipCosmetic: async (slot, cosmeticId) => {
+    const profile = get().profile;
+    if (!profile) return false;
+    if (cosmeticId && !profile.cosmetics.includes(cosmeticId)) return false;
+    const nextEquipped: Equipped = { ...profile.equipped };
+    if (cosmeticId) nextEquipped[slot] = cosmeticId;
+    else delete nextEquipped[slot];
+    const { data } = await supabase
+      .from("profiles")
+      .update({ equipped: nextEquipped } as any)
+      .eq("id", profile.id)
+      .select()
+      .single();
+    if (data) {
+      set({ profile: normalizeProfile(data) });
+      return true;
+    }
+    return false;
+  },
+
   reset: () =>
     set({
       profile: null,
       mistakes: [],
       sessions: [],
       taskCompletions: [],
-      mysteryBoxes: [],
       loading: false,
     }),
 }));
