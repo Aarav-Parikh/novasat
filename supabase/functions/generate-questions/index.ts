@@ -24,7 +24,7 @@ const TOPICS_RW = [
   "Grammar: Punctuation",
 ];
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const AI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const BATCH_SIZE = 8;
 const PRIMARY_BATCH_TIMEOUT_MS = 22_000;
 const FALLBACK_BATCH_TIMEOUT_MS = 18_000;
@@ -168,9 +168,9 @@ async function generateBatchWithFallback(params: {
   userPrompt: string;
 }) {
   const attempts = [
-    { model: "google/gemini-2.5-flash", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
-    { model: "google/gemini-2.5-flash-lite", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
-    { model: "google/gemini-2.5-pro", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "gemini-2.5-flash", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
+    { model: "gemini-2.5-flash-lite", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
+    { model: "gemini-2.5-pro", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
   ] as const;
 
   let lastError = "AI gateway error";
@@ -241,10 +241,10 @@ Deno.serve(async (req) => {
     const section = allowedSections.has(body.section) ? body.section : undefined;
     const topic = typeof body.topic === "string" ? body.topic.slice(0, 200) : undefined;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
 
     // ------- Mandatory auth + per-user daily cap -------
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -300,7 +300,7 @@ Deno.serve(async (req) => {
       const batchCount = batchSizes[batchIndex];
       try {
         const qs = await generateBatchWithFallback({
-          apiKey: LOVABLE_API_KEY,
+          apiKey: GEMINI_API_KEY,
           systemPrompt,
           userPrompt: buildUserPrompt({
             count: batchCount,
