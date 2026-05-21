@@ -52,6 +52,10 @@ type GeneratedQuestion = {
   explanation: string;
 };
 
+type BatchResult =
+  | { retryable: false; questions: GeneratedQuestion[] }
+  | { retryable: boolean; rateLimited?: boolean; error: string };
+
 const responseFormatInstruction =
   "Return only polished final questions through the tool. Use actual newline characters for multi-line math or passages, never escaped literal \\n text.";
 
@@ -95,7 +99,7 @@ async function requestQuestionBatch(params: {
   userPrompt: string;
   model: string;
   timeoutMs?: number;
-}) {
+}): Promise<BatchResult> {
   const { apiKey, systemPrompt, userPrompt, model, timeoutMs = PRIMARY_BATCH_TIMEOUT_MS } = params;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort("AI batch timed out"), timeoutMs);
