@@ -24,7 +24,7 @@ const TOPICS_RW = [
   "Grammar: Punctuation",
 ];
 
-const AI_URL = "https://openrouter.ai/api/v1/chat/completions";
+const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const BATCH_SIZE = 8;
 const PRIMARY_BATCH_TIMEOUT_MS = 22_000;
 const FALLBACK_BATCH_TIMEOUT_MS = 18_000;
@@ -106,8 +106,6 @@ async function requestQuestionBatch(params: {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://novaprep.app",
-        "X-Title": "NovaPrep SAT Practice",
       },
       body: JSON.stringify({
         model,
@@ -124,8 +122,8 @@ async function requestQuestionBatch(params: {
     });
 
     if (aiResp.status === 429) return { retryable: true as const, rateLimited: true as const, error: "Rate limits exceeded, please try again shortly." };
-    if (aiResp.status === 401 || aiResp.status === 403) return { retryable: false as const, error: "AI provider authentication failed. Check the OPENROUTER_API_KEY secret." };
-    if (aiResp.status === 402) return { retryable: false as const, error: "AI credits exhausted on OpenRouter account." };
+    if (aiResp.status === 401 || aiResp.status === 403) return { retryable: false as const, error: "AI provider authentication failed." };
+    if (aiResp.status === 402) return { retryable: false as const, error: "AI credits exhausted. Add funds to your Lovable workspace in Settings → Workspace → Usage." };
     if (!aiResp.ok) {
       const text = await aiResp.text();
       console.error("AI gateway error", aiResp.status, text);
@@ -170,9 +168,9 @@ async function generateBatchWithFallback(params: {
   userPrompt: string;
 }) {
   const attempts = [
-    { model: "google/gemini-2.0-flash-001", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
-    { model: "meta-llama/llama-3.3-70b-instruct", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
-    { model: "meta-llama/llama-3.1-8b-instruct", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "google/gemini-2.5-flash", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
+    { model: "google/gemini-2.5-flash-lite", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
+    { model: "google/gemini-2.5-pro", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
   ] as const;
 
   let lastError = "AI gateway error";
@@ -243,10 +241,10 @@ Deno.serve(async (req) => {
     const section = allowedSections.has(body.section) ? body.section : undefined;
     const topic = typeof body.topic === "string" ? body.topic.slice(0, 200) : undefined;
 
-    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!OPENROUTER_API_KEY) throw new Error("OPENROUTER_API_KEY not configured");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     // ------- Mandatory auth + per-user daily cap -------
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -302,7 +300,7 @@ Deno.serve(async (req) => {
       const batchCount = batchSizes[batchIndex];
       try {
         const qs = await generateBatchWithFallback({
-          apiKey: OPENROUTER_API_KEY,
+          apiKey: LOVABLE_API_KEY,
           systemPrompt,
           userPrompt: buildUserPrompt({
             count: batchCount,
