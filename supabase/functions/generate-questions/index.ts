@@ -235,8 +235,12 @@ function distributeMathSpr(totalCount: number, batchCount: number) {
   return perBatch;
 }
 
-// Per-user daily generation cap (each call counts as 1, regardless of question count)
-const DAILY_CALL_CAP = 40;
+// Optional per-user daily generation cap. Disabled by default because this
+// function uses the project owner's configured Mistral key, not shared free AI credits.
+const getDailyCallCap = () => {
+  const raw = Number(Deno.env.get("DAILY_AI_CALL_CAP") ?? "0");
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 0;
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -283,11 +287,12 @@ Deno.serve(async (req) => {
       _user_id: uid,
       _amount: 1,
     });
-    if (!bumpErr && typeof bumped === "number" && bumped > DAILY_CALL_CAP) {
+    const dailyCallCap = getDailyCallCap();
+    if (!bumpErr && dailyCallCap > 0 && typeof bumped === "number" && bumped > dailyCallCap) {
       return new Response(
         JSON.stringify({
           error:
-            "Daily AI generation limit reached. Try again tomorrow — this cap keeps free AI credits available for everyone.",
+            "Daily AI generation limit reached. Try again tomorrow.",
         }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
