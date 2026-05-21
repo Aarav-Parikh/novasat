@@ -117,6 +117,8 @@ async function requestQuestionBatch(params: {
           { role: "user", content: userPrompt },
         ],
         temperature: 0.7,
+        max_tokens: 8000,
+        response_format: { type: "json_object" },
       }),
       signal: controller.signal,
     });
@@ -134,13 +136,23 @@ async function requestQuestionBatch(params: {
     const content = data.choices?.[0]?.message?.content;
     if (!content) return { retryable: true as const, error: "No content returned" };
     let parsed: any;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      const match = content.match(/\{[\s\S]*\}/);
-      if (!match) return { retryable: true as const, error: "Invalid JSON returned" };
-      parsed = JSON.parse(match[0]);
+    const tryParse = (s: string) => {
+      try { return JSON.parse(s); } catch { return null; }
+    };
+    let cleaned = String(content).replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+    parsed = tryParse(cleaned);
+    if (!parsed) {
+      const start = cleaned.search(/[\{\[]/);
+      const end = cleaned.lastIndexOf("}");
+      if (start !== -1 && end > start) {
+        let slice = cleaned.substring(start, end + 1)
+          .replace(/,\s*}/g, "}")
+          .replace(/,\s*]/g, "]")
+          .replace(/[\x00-\x1F\x7F]/g, " ");
+        parsed = tryParse(slice);
+      }
     }
+    if (!parsed) return { retryable: true as const, error: "Invalid JSON returned" };
     const questions = (parsed?.questions ?? []) as GeneratedQuestion[];
     // Defensive: filter out any malformed entries instead of failing the whole batch
     const valid = questions.filter(
