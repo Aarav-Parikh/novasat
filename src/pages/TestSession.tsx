@@ -257,7 +257,6 @@ const TestSession = () => {
   const gradeCurrentModule = async () => {
     let correct = 0;
     let gained = 0;
-    let extraLifeAvailable = extraLifeMistakeShield;
     const tasks: Promise<any>[] = [];
     for (const qq of questions) {
       const answer = answers[qq.id];
@@ -269,14 +268,10 @@ const TestSession = () => {
       } else if (answer !== undefined && !isSkipped(answer)) {
         const elapsed = timeByQuestion[qq.id] ?? Math.round(sessionTime / Math.max(1, questions.length));
         const reason: ErrorReason = elapsed > 90 ? "Time Pressure" : qq.section === "Reading & Writing" ? "Misreading" : "Concept Gap";
-        if (extraLifeAvailable) extraLifeAvailable = false;
-        else tasks.push(recordMistake({ question: qq, userChoice: answerIndex(qq, answer), timeSpent: elapsed, reason }));
+        tasks.push(recordMistake({ question: qq, userChoice: answerIndex(qq, answer), timeSpent: elapsed, reason }));
       }
     }
-    if (extraLifeMistakeShield && !extraLifeAvailable) setExtraLifeMistakeShield(false);
     // Apply XP optimistically in one shot — no per-question DB round-trips
-    const mult = xpMultiplierFromBoosts(useNova.getState().profile?.active_boosts ?? []);
-    gained *= mult;
     const profile = useNova.getState().profile;
     if (profile) {
       useNova.setState({ profile: { ...profile, xp: profile.xp + gained, streak: Math.max(1, profile.streak || 0) } });
