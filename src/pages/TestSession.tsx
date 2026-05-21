@@ -106,68 +106,6 @@ const TestSession = () => {
     m === "redemption" ? "Weak-area redemption drill" :
     "Mistake review";
 
-  // Question-time buffs available in inventory
-  const questionBuffs = useMemo(() =>
-    inventory.filter((item) => isQuestionTimeBoost(item.kind)),
-    [inventory]
-  );
-
-  const useBuff = async (kind: BoostKind) => {
-    const item = questionBuffs.find((i) => i.kind === kind);
-    if (!item) return;
-    const q = questions[idx];
-    if (!q) return;
-
-    switch (kind) {
-      case "fifty_fifty": {
-        // Eliminate 2 wrong choices (only for multiple choice with 4 options)
-        if (q.responseType === "spr") {
-          toast({ title: "Can't use 50/50 here", description: "This is a student-produced response question.", variant: "destructive" });
-          return;
-        }
-        const wrongIndices = q.choices.map((_, i) => i).filter((i) => i !== q.correct && !eliminatedChoices.has(i));
-        const toEliminate = wrongIndices.sort(() => Math.random() - 0.5).slice(0, 2);
-        setEliminatedChoices(new Set([...eliminatedChoices, ...toEliminate]));
-        // If current answer is eliminated, clear it
-        if (typeof answers[q.id] === "number" && toEliminate.includes(answers[q.id] as number)) {
-          setAnswers((a) => { const next = { ...a }; delete next[q.id]; return next; });
-        }
-        break;
-      }
-      case "hint": {
-        setHintShown(true);
-        break;
-      }
-      case "extra_life": {
-        setExtraLifeUsed(true);
-        setExtraLifeMistakeShield(true);
-        toast({ title: "Extra Life armed", description: "Your next wrong answer won't be added to the Vault." });
-        break;
-      }
-      case "skip_token": {
-        // Mark as skipped (counts as done) and advance
-        setAnswers((a) => ({ ...a, [q.id]: "__skipped__" }));
-        stampTime();
-        if (idx < questions.length - 1) setIdx(idx + 1);
-        else setReviewing(true);
-        break;
-      }
-      case "topic_radar": {
-        toast({ title: "Topic Radar", description: `This question covers: ${q.topic} (${q.difficulty})` });
-        break;
-      }
-    }
-
-    // Consume the item from inventory
-    await consumeInventoryItem(item.id);
-  };
-
-  // Reset per-question buff state when moving to a new question
-  useEffect(() => {
-    setEliminatedChoices(new Set());
-    setHintShown(false);
-    setExtraLifeUsed(false);
-  }, [idx]);
 
   const cleanExplanation = (text: string) =>
     text
@@ -319,7 +257,6 @@ const TestSession = () => {
   const gradeCurrentModule = async () => {
     let correct = 0;
     let gained = 0;
-    let extraLifeAvailable = extraLifeMistakeShield;
     const tasks: Promise<any>[] = [];
     for (const qq of questions) {
       const answer = answers[qq.id];
@@ -331,14 +268,10 @@ const TestSession = () => {
       } else if (answer !== undefined && !isSkipped(answer)) {
         const elapsed = timeByQuestion[qq.id] ?? Math.round(sessionTime / Math.max(1, questions.length));
         const reason: ErrorReason = elapsed > 90 ? "Time Pressure" : qq.section === "Reading & Writing" ? "Misreading" : "Concept Gap";
-        if (extraLifeAvailable) extraLifeAvailable = false;
-        else tasks.push(recordMistake({ question: qq, userChoice: answerIndex(qq, answer), timeSpent: elapsed, reason }));
+        tasks.push(recordMistake({ question: qq, userChoice: answerIndex(qq, answer), timeSpent: elapsed, reason }));
       }
     }
-    if (extraLifeMistakeShield && !extraLifeAvailable) setExtraLifeMistakeShield(false);
     // Apply XP optimistically in one shot — no per-question DB round-trips
-    const mult = xpMultiplierFromBoosts(useNova.getState().profile?.active_boosts ?? []);
-    gained *= mult;
     const profile = useNova.getState().profile;
     if (profile) {
       useNova.setState({ profile: { ...profile, xp: profile.xp + gained, streak: Math.max(1, profile.streak || 0) } });
@@ -694,13 +627,6 @@ const TestSession = () => {
               <div className="mt-6 space-y-2.5">
                 {q.choices.map((c, i) => {
                   const isSel = answers[q.id] === i;
-                  const isEliminated = eliminatedChoices.has(i);
-                  if (isEliminated) return (
-                    <div key={i} className="w-full text-left px-4 py-3.5 rounded-lg border border-border/30 bg-muted/10 text-sm flex items-start gap-3 opacity-40 line-through cursor-not-allowed">
-                      <span className="font-mono text-xs text-muted-foreground mt-0.5">{String.fromCharCode(65 + i)}</span>
-                      <span className="flex-1">{renderText(c)}</span>
-                    </div>
-                  );
                   return (
                     <button key={i} onClick={() => setAnswers((a) => ({ ...a, [q.id]: i }))} className={["w-full text-left px-4 py-3.5 rounded-lg border text-sm transition-all flex items-start gap-3", isSel ? "border-primary/60 bg-primary/10" : "border-border bg-muted/30 hover:border-secondary/50 hover:bg-muted/50"].join(" ")}>
                       <span className="font-mono text-xs text-muted-foreground mt-0.5">{String.fromCharCode(65 + i)}</span>
@@ -708,44 +634,6 @@ const TestSession = () => {
                     </button>
                   );
                 })}
-              </div>
-            )}
-
-            {/* Hint display */}
-            {hintShown && q.explanation && (
-              <div className="mt-4 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-muted-foreground">
-                <Lightbulb className="h-4 w-4 text-warning inline mr-1.5" />
-                <span className="font-medium text-warning">Hint:</span> {q.explanation.split(".")[0]}.
-              </div>
-            )}
-
-            {/* Question-time buff bar */}
-            {questionBuffs.length > 0 && (
-              <div className="mt-5 flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">Buffs:</span>
-                {(() => {
-                  const buffCounts = new Map<string, InventoryItem[]>();
-                  for (const b of questionBuffs) {
-                    const list = buffCounts.get(b.kind) ?? [];
-                    list.push(b);
-                    buffCounts.set(b.kind, list);
-                  }
-                  return [...buffCounts.entries()].map(([kind, items]) => {
-                    const Icon = buffIcon[kind];
-                    if (!Icon) return null;
-                    return (
-                      <button
-                        key={kind}
-                        onClick={() => useBuff(kind as BoostKind)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                        {buffLabel[kind] ?? kind}
-                        {items.length > 1 && <span className="text-muted-foreground">x{items.length}</span>}
-                      </button>
-                    );
-                  });
-                })()}
               </div>
             )}
           </div>
