@@ -300,7 +300,7 @@ Deno.serve(async (req) => {
       const batchCount = batchSizes[batchIndex];
       try {
         const qs = await generateBatchWithFallback({
-          apiKey: LOVABLE_API_KEY,
+          apiKey: GEMINI_API_KEY,
           systemPrompt,
           userPrompt: buildUserPrompt({
             count: batchCount,
