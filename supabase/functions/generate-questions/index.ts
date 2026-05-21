@@ -178,7 +178,7 @@ async function generateBatchWithFallback(params: {
   apiKey: string;
   systemPrompt: string;
   userPrompt: string;
-}) {
+}): Promise<GeneratedQuestion[]> {
   const attempts = [
     { model: "mistral-large-latest", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
     { model: "mistral-medium-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
