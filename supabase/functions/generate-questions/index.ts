@@ -241,10 +241,10 @@ Deno.serve(async (req) => {
     const section = allowedSections.has(body.section) ? body.section : undefined;
     const topic = typeof body.topic === "string" ? body.topic.slice(0, 200) : undefined;
 
-    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!OPENROUTER_API_KEY) throw new Error("OPENROUTER_API_KEY not configured");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     // ------- Mandatory auth + per-user daily cap -------
     const authHeader = req.headers.get("Authorization") ?? "";
