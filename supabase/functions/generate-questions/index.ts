@@ -24,7 +24,7 @@ const TOPICS_RW = [
   "Grammar: Punctuation",
 ];
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const AI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const BATCH_SIZE = 8;
 const PRIMARY_BATCH_TIMEOUT_MS = 22_000;
 const FALLBACK_BATCH_TIMEOUT_MS = 18_000;
