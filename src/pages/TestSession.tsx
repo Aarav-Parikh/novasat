@@ -627,13 +627,6 @@ const TestSession = () => {
               <div className="mt-6 space-y-2.5">
                 {q.choices.map((c, i) => {
                   const isSel = answers[q.id] === i;
-                  const isEliminated = eliminatedChoices.has(i);
-                  if (isEliminated) return (
-                    <div key={i} className="w-full text-left px-4 py-3.5 rounded-lg border border-border/30 bg-muted/10 text-sm flex items-start gap-3 opacity-40 line-through cursor-not-allowed">
-                      <span className="font-mono text-xs text-muted-foreground mt-0.5">{String.fromCharCode(65 + i)}</span>
-                      <span className="flex-1">{renderText(c)}</span>
-                    </div>
-                  );
                   return (
                     <button key={i} onClick={() => setAnswers((a) => ({ ...a, [q.id]: i }))} className={["w-full text-left px-4 py-3.5 rounded-lg border text-sm transition-all flex items-start gap-3", isSel ? "border-primary/60 bg-primary/10" : "border-border bg-muted/30 hover:border-secondary/50 hover:bg-muted/50"].join(" ")}>
                       <span className="font-mono text-xs text-muted-foreground mt-0.5">{String.fromCharCode(65 + i)}</span>
@@ -641,44 +634,6 @@ const TestSession = () => {
                     </button>
                   );
                 })}
-              </div>
-            )}
-
-            {/* Hint display */}
-            {hintShown && q.explanation && (
-              <div className="mt-4 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-muted-foreground">
-                <Lightbulb className="h-4 w-4 text-warning inline mr-1.5" />
-                <span className="font-medium text-warning">Hint:</span> {q.explanation.split(".")[0]}.
-              </div>
-            )}
-
-            {/* Question-time buff bar */}
-            {questionBuffs.length > 0 && (
-              <div className="mt-5 flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">Buffs:</span>
-                {(() => {
-                  const buffCounts = new Map<string, InventoryItem[]>();
-                  for (const b of questionBuffs) {
-                    const list = buffCounts.get(b.kind) ?? [];
-                    list.push(b);
-                    buffCounts.set(b.kind, list);
-                  }
-                  return [...buffCounts.entries()].map(([kind, items]) => {
-                    const Icon = buffIcon[kind];
-                    if (!Icon) return null;
-                    return (
-                      <button
-                        key={kind}
-                        onClick={() => useBuff(kind as BoostKind)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                        {buffLabel[kind] ?? kind}
-                        {items.length > 1 && <span className="text-muted-foreground">x{items.length}</span>}
-                      </button>
-                    );
-                  });
-                })()}
               </div>
             )}
           </div>
