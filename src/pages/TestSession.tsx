@@ -106,68 +106,6 @@ const TestSession = () => {
     m === "redemption" ? "Weak-area redemption drill" :
     "Mistake review";
 
-  // Question-time buffs available in inventory
-  const questionBuffs = useMemo(() =>
-    inventory.filter((item) => isQuestionTimeBoost(item.kind)),
-    [inventory]
-  );
-
-  const useBuff = async (kind: BoostKind) => {
-    const item = questionBuffs.find((i) => i.kind === kind);
-    if (!item) return;
-    const q = questions[idx];
-    if (!q) return;
-
-    switch (kind) {
-      case "fifty_fifty": {
-        // Eliminate 2 wrong choices (only for multiple choice with 4 options)
-        if (q.responseType === "spr") {
-          toast({ title: "Can't use 50/50 here", description: "This is a student-produced response question.", variant: "destructive" });
-          return;
-        }
-        const wrongIndices = q.choices.map((_, i) => i).filter((i) => i !== q.correct && !eliminatedChoices.has(i));
-        const toEliminate = wrongIndices.sort(() => Math.random() - 0.5).slice(0, 2);
-        setEliminatedChoices(new Set([...eliminatedChoices, ...toEliminate]));
-        // If current answer is eliminated, clear it
-        if (typeof answers[q.id] === "number" && toEliminate.includes(answers[q.id] as number)) {
-          setAnswers((a) => { const next = { ...a }; delete next[q.id]; return next; });
-        }
-        break;
-      }
-      case "hint": {
-        setHintShown(true);
-        break;
-      }
-      case "extra_life": {
-        setExtraLifeUsed(true);
-        setExtraLifeMistakeShield(true);
-        toast({ title: "Extra Life armed", description: "Your next wrong answer won't be added to the Vault." });
-        break;
-      }
-      case "skip_token": {
-        // Mark as skipped (counts as done) and advance
-        setAnswers((a) => ({ ...a, [q.id]: "__skipped__" }));
-        stampTime();
-        if (idx < questions.length - 1) setIdx(idx + 1);
-        else setReviewing(true);
-        break;
-      }
-      case "topic_radar": {
-        toast({ title: "Topic Radar", description: `This question covers: ${q.topic} (${q.difficulty})` });
-        break;
-      }
-    }
-
-    // Consume the item from inventory
-    await consumeInventoryItem(item.id);
-  };
-
-  // Reset per-question buff state when moving to a new question
-  useEffect(() => {
-    setEliminatedChoices(new Set());
-    setHintShown(false);
-    setExtraLifeUsed(false);
-  }, [idx]);
 
   const cleanExplanation = (text: string) =>
     text
