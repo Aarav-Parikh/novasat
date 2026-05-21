@@ -1,4 +1,4 @@
-// Edge function: generate original SAT-style practice questions via OpenRouter API
+// Edge function: generate original SAT-style practice questions via Gemini API
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -28,7 +28,7 @@ const AI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/com
 const BATCH_SIZE = 8;
 const PRIMARY_BATCH_TIMEOUT_MS = 22_000;
 const FALLBACK_BATCH_TIMEOUT_MS = 18_000;
-// Sequential batches to avoid OpenRouter per-second rate limits
+// Sequential batches to avoid provider per-second rate limits
 const BATCH_CONCURRENCY = 1;
 const RATE_LIMIT_RETRIES = 2;
 const RATE_LIMIT_BACKOFF_MS = 1500;
@@ -123,7 +123,7 @@ async function requestQuestionBatch(params: {
 
     if (aiResp.status === 429) return { retryable: true as const, rateLimited: true as const, error: "Rate limits exceeded, please try again shortly." };
     if (aiResp.status === 401 || aiResp.status === 403) return { retryable: false as const, error: "AI provider authentication failed." };
-    if (aiResp.status === 402) return { retryable: false as const, error: "AI credits exhausted. Add funds to your Lovable workspace in Settings → Workspace → Usage." };
+    if (aiResp.status === 402) return { retryable: false as const, error: "Gemini API credits exhausted. Check billing or quota for your Gemini API key." };
     if (!aiResp.ok) {
       const text = await aiResp.text();
       console.error("AI gateway error", aiResp.status, text);
@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
     const systemPrompt = buildSystemPrompt();
     const collected: GeneratedQuestion[] = [];
     const batchErrors: string[] = [];
-    // Run sequentially to avoid OpenRouter rate limits, with small inter-batch
+    // Run sequentially to avoid provider rate limits, with small inter-batch
     // delay. Tolerate individual batch failures and return whatever we got.
     for (let batchIndex = 0; batchIndex < batchSizes.length; batchIndex++) {
       const batchCount = batchSizes[batchIndex];
