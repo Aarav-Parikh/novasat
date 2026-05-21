@@ -168,9 +168,9 @@ async function generateBatchWithFallback(params: {
   userPrompt: string;
 }) {
   const attempts = [
-    { model: "google/gemini-2.0-flash-001", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
-    { model: "meta-llama/llama-3.3-70b-instruct", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
-    { model: "meta-llama/llama-3.1-8b-instruct", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "google/gemini-2.5-flash", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
+    { model: "google/gemini-2.5-flash-lite", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
+    { model: "google/gemini-2.5-pro", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
   ] as const;
 
   let lastError = "AI gateway error";
