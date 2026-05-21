@@ -106,8 +106,6 @@ async function requestQuestionBatch(params: {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://novaprep.app",
-        "X-Title": "NovaPrep SAT Practice",
       },
       body: JSON.stringify({
         model,
@@ -124,8 +122,8 @@ async function requestQuestionBatch(params: {
     });
 
     if (aiResp.status === 429) return { retryable: true as const, rateLimited: true as const, error: "Rate limits exceeded, please try again shortly." };
-    if (aiResp.status === 401 || aiResp.status === 403) return { retryable: false as const, error: "AI provider authentication failed. Check the OPENROUTER_API_KEY secret." };
-    if (aiResp.status === 402) return { retryable: false as const, error: "AI credits exhausted on OpenRouter account." };
+    if (aiResp.status === 401 || aiResp.status === 403) return { retryable: false as const, error: "AI provider authentication failed." };
+    if (aiResp.status === 402) return { retryable: false as const, error: "AI credits exhausted. Add funds to your Lovable workspace in Settings → Workspace → Usage." };
     if (!aiResp.ok) {
       const text = await aiResp.text();
       console.error("AI gateway error", aiResp.status, text);
