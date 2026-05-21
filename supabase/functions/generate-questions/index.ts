@@ -24,7 +24,7 @@ const TOPICS_RW = [
   "Grammar: Punctuation",
 ];
 
-const AI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const AI_URL = "https://api.mistral.ai/v1/chat/completions";
 const BATCH_SIZE = 8;
 const PRIMARY_BATCH_TIMEOUT_MS = 22_000;
 const FALLBACK_BATCH_TIMEOUT_MS = 18_000;
@@ -123,7 +123,7 @@ async function requestQuestionBatch(params: {
 
     if (aiResp.status === 429) return { retryable: true as const, rateLimited: true as const, error: "Rate limits exceeded, please try again shortly." };
     if (aiResp.status === 401 || aiResp.status === 403) return { retryable: false as const, error: "AI provider authentication failed." };
-    if (aiResp.status === 402) return { retryable: false as const, error: "Gemini API credits exhausted. Check billing or quota for your Gemini API key." };
+    if (aiResp.status === 402) return { retryable: false as const, error: "Mistral API credits exhausted. Check billing or quota for your Mistral API key." };
     if (!aiResp.ok) {
       const text = await aiResp.text();
       console.error("AI gateway error", aiResp.status, text);
@@ -168,9 +168,9 @@ async function generateBatchWithFallback(params: {
   userPrompt: string;
 }) {
   const attempts = [
-    { model: "gemini-2.5-flash", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
-    { model: "gemini-2.5-flash-lite", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
-    { model: "gemini-2.5-pro", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "mistral-large-latest", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
+    { model: "mistral-medium-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
+    { model: "mistral-small-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
   ] as const;
 
   let lastError = "AI gateway error";
@@ -241,10 +241,10 @@ Deno.serve(async (req) => {
     const section = allowedSections.has(body.section) ? body.section : undefined;
     const topic = typeof body.topic === "string" ? body.topic.slice(0, 200) : undefined;
 
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const MISTRAL_API_KEY = Deno.env.get("MISTRAL_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
+    if (!MISTRAL_API_KEY) throw new Error("MISTRAL_API_KEY not configured");
 
     // ------- Mandatory auth + per-user daily cap -------
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -300,7 +300,7 @@ Deno.serve(async (req) => {
       const batchCount = batchSizes[batchIndex];
       try {
         const qs = await generateBatchWithFallback({
-          apiKey: GEMINI_API_KEY,
+          apiKey: MISTRAL_API_KEY,
           systemPrompt,
           userPrompt: buildUserPrompt({
             count: batchCount,
