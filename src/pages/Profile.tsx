@@ -56,7 +56,7 @@ const Profile = () => {
   const [displayName, setDisplayName] = useState(profile?.display_name ?? "");
   const [targetScore, setTargetScore] = useState(String(profile?.target_score ?? ""));
   const [testDate, setTestDate] = useState(profile?.test_date ?? "");
-  const badgeState = { sessions: sessions.length, accuracy: stats.accuracy, bestAccuracy: stats.bestAccuracy, mistakes: mistakes.length, streak: profile?.streak ?? 0, xp, sp: profile?.sp ?? 0, hours: stats.hoursLogged, level: rank.level, targetScore: profile?.target_score, testDate: profile?.test_date, avgPace: stats.avgPace, projected: stats.projectedScore, inventory: (profile?.inventory ?? []).length };
+  const badgeState = { sessions: sessions.length, accuracy: stats.accuracy, bestAccuracy: stats.bestAccuracy, mistakes: mistakes.length, streak: profile?.streak ?? 0, xp, sp: profile?.sp ?? 0, hours: stats.hoursLogged, level: rank.level, targetScore: profile?.target_score, testDate: profile?.test_date, avgPace: stats.avgPace, projected: stats.projectedScore, inventory: 0 };
 
   useEffect(() => {
     setDisplayName(profile?.display_name ?? "");
