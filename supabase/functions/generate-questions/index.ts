@@ -25,7 +25,7 @@ const TOPICS_RW = [
 ];
 
 const AI_URL = "https://api.mistral.ai/v1/chat/completions";
-const BATCH_SIZE = 8;
+const BATCH_SIZE = 10;
 const PRIMARY_BATCH_TIMEOUT_MS = 22_000;
 const FALLBACK_BATCH_TIMEOUT_MS = 18_000;
 // Sequential batches to avoid provider per-second rate limits

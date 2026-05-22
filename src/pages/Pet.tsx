@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Cookie, Heart, Moon, Sparkles, Sun, ChevronRight, Loader2, CircleCheck as CheckCircle2, Circle as XCircle } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
@@ -383,6 +383,9 @@ function WakeUpQuiz({ onClose }: { onClose: () => void }) {
   const [done, setDone] = useState(false);
   const [reviving, setReviving] = useState(false);
   const [revived, setRevived] = useState(false);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -404,14 +407,17 @@ function WakeUpQuiz({ onClose }: { onClose: () => void }) {
             description: e?.message ?? "Try again in a moment.",
             variant: "destructive",
           });
-          onClose();
+          onCloseRef.current();
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [onClose]);
+    // Intentionally run only once on mount — onClose changes each parent render
+    // and would otherwise re-trigger question generation mid-quiz.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const q = questions[idx];
   const allAnswered = questions.length > 0 && questions.every((qq) => answers[qq.id] !== undefined);
@@ -423,18 +429,14 @@ function WakeUpQuiz({ onClose }: { onClose: () => void }) {
     const profileNow = useNova.getState().profile;
     if (profileNow) {
       const { supabase } = await import("@/integrations/supabase/client");
-      const { data } = await supabase
+      await supabase
         .from("profiles")
         .update({
           pet_energy: 100,
           pet_last_decay_at: new Date().toISOString(),
         })
-        .eq("id", profileNow.id)
-        .select()
-        .single();
-      if (data) {
-        await syncProfile();
-      }
+        .eq("id", profileNow.id);
+      await syncProfile();
     }
     setReviving(false);
     setRevived(true);
