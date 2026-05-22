@@ -278,8 +278,7 @@ const TestSession = () => {
       useNova.setState({ profile: { ...profile, xp: profile.xp + gained, streak: Math.max(1, profile.streak || 0) } });
     }
     setXpEarned((x) => x + gained);
-    // Fire mistake recording in background — don't block the UI
-    Promise.allSettled(tasks).catch(() => {});
+    await Promise.allSettled(tasks);
     return { correct, gained };
   };
 
@@ -489,7 +488,7 @@ const TestSession = () => {
             <p className="text-muted-foreground mt-2 text-sm">
               You answered <span className="text-foreground font-semibold">{totalCorrect}</span> of {totalQ} correctly in <span className="font-mono">{fmtTime(sessionTimeRef.current + completed.seconds)}</span>.
             </p>
-            <div className="mt-3 text-xs text-secondary">+{xpEarned + completed.xp} XP · Mistakes routed to your Vault</div>
+            <div className="mt-3 text-xs text-secondary">+{xpEarned} XP · Mistakes routed to your Vault</div>
 
             {m === "full" && (
               <div className="mt-6 grid sm:grid-cols-3 gap-3 text-left">
