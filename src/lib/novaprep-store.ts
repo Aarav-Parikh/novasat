@@ -100,6 +100,11 @@ export interface TaskCompletion {
   completed_on: string;
 }
 
+const DAILY_SP_KEY_PREFIX = "daily-sp::";
+
+const sessionDate = (createdAt?: string) => createdAt?.slice(0, 10);
+const dailySPTaskKey = (date = todayDate()) => `${DAILY_SP_KEY_PREFIX}${date}`;
+
 export interface FocusTimerState {
   duration: number;
   endsAt: number | null;
@@ -131,7 +136,7 @@ interface NovaState {
   awardFocusXP: (minutes: number) => Promise<number>;
   recordMistake: (m: {
     question: Question;
-    userChoice: number;
+    userChoice: number | null;
     timeSpent: number;
     reason: ErrorReason;
   }) => Promise<void>;
@@ -298,19 +303,37 @@ export const useNova = create<NovaState>((set, get) => ({
           .eq("completed_on", today),
       ]);
 
+    let profileData = profileRes.data;
+    if (!profileData) {
+      const { data: created } = await supabase
+        .from("profiles")
+        .insert({ id: userId })
+        .select("*")
+        .maybeSingle();
+      profileData = created ?? null;
+      if (!profileData) {
+        const { data: existing } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .maybeSingle();
+        profileData = existing ?? null;
+      }
+    }
+
     set({
-      profile: normalizeProfile(profileRes.data),
+      profile: normalizeProfile(profileData),
       mistakes: dedupeMistakes(((mistakesRes.data as MistakeRecord[]) ?? [])),
       sessions: (sessionsRes.data as SessionSummary[]) ?? [],
       taskCompletions: (taskCompletionsRes.data as TaskCompletion[]) ?? [],
       loading: false,
     });
 
-    if (profileRes.data) {
+    if (profileData) {
       // Streak reset
       const lastSessionDate = (sessionsRes.data as SessionSummary[] | null)?.[0]
         ?.created_at?.slice(0, 10);
-      const currentStreak = (profileRes.data as any).streak ?? 0;
+      const currentStreak = (profileData as any).streak ?? 0;
       if (currentStreak > 0) {
         const todayMs = new Date(`${today}T00:00:00`).getTime();
         const lastMs = lastSessionDate
@@ -376,6 +399,8 @@ export const useNova = create<NovaState>((set, get) => ({
       }));
     }
   },
+
+  
 
   awardFocusXP: async (minutes) => {
     const profile = get().profile;
@@ -463,7 +488,7 @@ export const useNova = create<NovaState>((set, get) => ({
     const profile = get().profile;
     if (!profile) return;
 
-    const { data } = await supabase
+    const { data, error: sessionError } = await supabase
       .from("sessions")
       .insert({
         user_id: profile.id,
@@ -475,6 +500,7 @@ export const useNova = create<NovaState>((set, get) => ({
       })
       .select("id,created_at,score,total,duration_seconds,mode,xp_earned")
       .single();
+    if (sessionError) throw sessionError;
 
     const today = todayDate();
     const lastSessionDate = get().sessions[0]?.created_at?.slice(0, 10);
@@ -501,17 +527,18 @@ export const useNova = create<NovaState>((set, get) => ({
     // Treats: 1 per 5 correct (only when not a review redo)
     const treatsAwarded = mode === "review" ? 0 : treatsFromCorrect(score);
 
-    const { data: updatedProfile } = await supabase
+    const { data: updatedProfile, error: profileError } = await supabase
       .from("profiles")
       .update({
         streak: nextStreak,
-        xp: profile.xp,
+        xp: profile.xp + xpEarned,
         sp: profile.sp + spAwarded,
         treats: profile.treats + treatsAwarded,
       })
       .eq("id", profile.id)
       .select()
       .single();
+    if (profileError) throw profileError;
 
     set((state) => ({
       sessions: data ? [data as SessionSummary, ...state.sessions] : state.sessions,
@@ -554,6 +581,23 @@ export const useNova = create<NovaState>((set, get) => ({
   claimDailySP: async (amount) => {
     const profile = get().profile;
     if (!profile) return false;
+    const today = todayDate();
+    const taskKey = dailySPTaskKey(today);
+    if (get().taskCompletions.some((item) => item.task_key === taskKey && item.completed_on === today)) return false;
+
+    const { data: claimed, error: claimError } = await supabase
+      .from("task_completions")
+      .insert({
+        user_id: profile.id,
+        task_key: taskKey,
+        task_label: "Daily SP bonus",
+        day_label: "Today",
+        completed_on: today,
+      })
+      .select("id,task_key,task_label,day_label,completed_on")
+      .single();
+    if (claimError || !claimed) return false;
+
     const { data } = await supabase
       .from("profiles")
       .update({ sp: profile.sp + amount })
@@ -561,7 +605,10 @@ export const useNova = create<NovaState>((set, get) => ({
       .select()
       .single();
     if (data) {
-      set({ profile: normalizeProfile(data) });
+      set((state) => ({
+        profile: normalizeProfile(data),
+        taskCompletions: [claimed as TaskCompletion, ...state.taskCompletions],
+      }));
       return true;
     }
     return false;

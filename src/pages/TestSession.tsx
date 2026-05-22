@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Clock, Flag, X, ChevronRight, Rocket, Loader as Loader2, TriangleAlert as AlertTriangle, Coffee, CircleCheck as CheckCircle2, Circle as XCircle, Cookie } from "lucide-react";
+import { Clock, Flag, X, ChevronRight, Rocket, Loader as Loader2, TriangleAlert as AlertTriangle, Coffee, CircleCheck as CheckCircle2, Circle as XCircle } from "lucide-react";
 import { Question, ErrorReason, xpForDifficulty } from "@/lib/novaprep-data";
 import { useNova } from "@/lib/novaprep-store";
 import { generateQuestions } from "@/lib/generate-questions";
@@ -56,7 +56,7 @@ const isCorrectAnswer = (q: Question, answer: AnswerValue | undefined) => {
   if (q.responseType === "spr") return normalizeSPR(answer) === normalizeSPR(q.correctText ?? q.choices[q.correct]);
   return answer === q.correct;
 };
-const answerIndex = (q: Question, answer: AnswerValue | undefined) => typeof answer === "number" ? answer : q.correct;
+const answerIndex = (answer: AnswerValue | undefined) => typeof answer === "number" ? answer : null;
 
 const TestSession = () => {
   const { mode = "full" } = useParams();
@@ -64,7 +64,6 @@ const TestSession = () => {
   const [searchParams] = useSearchParams();
   const nav = useNavigate();
   const recordMistake = useNova((s) => s.recordMistake);
-  const awardXP = useNova((s) => s.awardXP);
   const recordSession = useNova((s) => s.recordSession);
   const resolveMistake = useNova((s) => s.resolveMistake);
   const markTaskComplete = useNova((s) => s.markTaskComplete);
@@ -122,9 +121,11 @@ const TestSession = () => {
 
   const prepareQuestions = (qs: Question[]): Question[] => qs.map((question): Question => shuffleChoices({
     ...question,
-    responseType: question.responseType === "spr" ? "spr" : "multiple-choice",
+    responseType: question.section === "Math" && question.responseType === "spr" ? "spr" : "multiple-choice",
+    correct: Number.isInteger(question.correct) && question.correct >= 0 && question.correct <= 3 ? question.correct : 0,
+    correctText: question.responseType === "spr" ? question.correctText : question.choices[question.correct] ?? question.correctText,
     explanation: cleanExplanation(question.explanation),
-  }));
+  })).filter((question) => question.responseType === "spr" || Boolean(question.choices[question.correct]));
 
   const loadQuestions = async (bias: "balanced" | "easier" | "harder", targetModule = module) => {
     setLoading(true);
@@ -152,7 +153,7 @@ const TestSession = () => {
         const requestedSection = m === "full" ? fullSection : modeSection;
         const modeTopic = requestedTopic && requestedTopic !== "Mixed SAT Skills" ? requestedTopic : undefined;
         // Request extra questions to account for potential section mismatches
-        const requestCount = m === "full" ? (targetModule === 1 ? 54 : 44) : MODULE_SIZE[m] + 6;
+        const requestCount = m === "full" ? (targetModule === 1 ? 54 : 44) : MODULE_SIZE[m];
         const qs = await generateQuestions({
           mode: m === "review" ? "redemption" : m,
           count: requestCount,
@@ -265,24 +266,18 @@ const TestSession = () => {
         const sourceMistakeId = qq.id.startsWith("redo:") ? qq.id.split(":")[1] : null;
         if (sourceMistakeId) tasks.push(resolveMistake(sourceMistakeId));
         gained += xpForDifficulty(qq.difficulty);
-      } else if (answer !== undefined && !isSkipped(answer)) {
+      } else {
         const elapsed = timeByQuestion[qq.id] ?? Math.round(sessionTime / Math.max(1, questions.length));
         const reason: ErrorReason = elapsed > 90 ? "Time Pressure" : qq.section === "Reading & Writing" ? "Misreading" : "Concept Gap";
-        tasks.push(recordMistake({ question: qq, userChoice: answerIndex(qq, answer), timeSpent: elapsed, reason }));
+        tasks.push(recordMistake({ question: qq, userChoice: answerIndex(answer), timeSpent: elapsed, reason }));
       }
     }
-    // Apply XP optimistically in one shot — no per-question DB round-trips
-    const profile = useNova.getState().profile;
-    if (profile) {
-      useNova.setState({ profile: { ...profile, xp: profile.xp + gained, streak: Math.max(1, profile.streak || 0) } });
-    }
     setXpEarned((x) => x + gained);
-    // Fire mistake recording in background — don't block the UI
-    Promise.allSettled(tasks).catch(() => {});
+    await Promise.allSettled(tasks);
     return { correct, gained };
   };
 
-  const finishSession = async (correct: number, total: number, gained: number) => {
+  const finishSession = async (correct: number, total: number, sessionXpEarned: number) => {
     // Snapshot for the answer key BEFORE marking done so the UI can render it.
     setAnswerKey({ questions: [...questions], answers: { ...answers } });
     setDone(true);
@@ -292,7 +287,7 @@ const TestSession = () => {
         score: correct + completed.correct,
         total: total + completed.total,
         duration: sessionTimeRef.current + completed.seconds,
-        xpEarned: xpEarned + completed.xp + gained,
+        xpEarned: sessionXpEarned,
       });
       if (taskLabel && dayLabel) await markTaskComplete({ taskKey: taskCompletionKey(dayLabel, taskLabel), taskLabel, dayLabel });
       // Re-sync profile from DB to ensure XP display is accurate everywhere
@@ -331,7 +326,9 @@ const TestSession = () => {
         loadQuestions(harder ? "harder" : "easier", 2).catch(() => {});
         return;
       }
-      await finishSession(result.correct, questions.length, result.gained);
+      const sessionXpEarned = completed.xp + result.gained;
+      setXpEarned(sessionXpEarned);
+      await finishSession(result.correct, questions.length, sessionXpEarned);
       setReviewing(false);
     } finally {
       setSubmitting(false);
@@ -486,7 +483,7 @@ const TestSession = () => {
             <p className="text-muted-foreground mt-2 text-sm">
               You answered <span className="text-foreground font-semibold">{totalCorrect}</span> of {totalQ} correctly in <span className="font-mono">{fmtTime(sessionTimeRef.current + completed.seconds)}</span>.
             </p>
-            <div className="mt-3 text-xs text-secondary">+{xpEarned + completed.xp} XP · Mistakes routed to your Vault</div>
+            <div className="mt-3 text-xs text-secondary">+{xpEarned} XP · Mistakes routed to your Vault</div>
 
             {m === "full" && (
               <div className="mt-6 grid sm:grid-cols-3 gap-3 text-left">
