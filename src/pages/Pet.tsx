@@ -383,6 +383,9 @@ function WakeUpQuiz({ onClose }: { onClose: () => void }) {
   const [done, setDone] = useState(false);
   const [reviving, setReviving] = useState(false);
   const [revived, setRevived] = useState(false);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
 
   useEffect(() => {
     let cancelled = false;
