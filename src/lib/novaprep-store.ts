@@ -136,7 +136,7 @@ interface NovaState {
   awardFocusXP: (minutes: number) => Promise<number>;
   recordMistake: (m: {
     question: Question;
-    userChoice: number;
+    userChoice: number | null;
     timeSpent: number;
     reason: ErrorReason;
   }) => Promise<void>;
@@ -579,6 +579,23 @@ export const useNova = create<NovaState>((set, get) => ({
   claimDailySP: async (amount) => {
     const profile = get().profile;
     if (!profile) return false;
+    const today = todayDate();
+    const taskKey = dailySPTaskKey(today);
+    if (get().taskCompletions.some((item) => item.task_key === taskKey && item.completed_on === today)) return false;
+
+    const { data: claimed, error: claimError } = await supabase
+      .from("task_completions")
+      .insert({
+        user_id: profile.id,
+        task_key: taskKey,
+        task_label: "Daily SP bonus",
+        day_label: "Today",
+        completed_on: today,
+      })
+      .select("id,task_key,task_label,day_label,completed_on")
+      .single();
+    if (claimError || !claimed) return false;
+
     const { data } = await supabase
       .from("profiles")
       .update({ sp: profile.sp + amount })
@@ -586,7 +603,10 @@ export const useNova = create<NovaState>((set, get) => ({
       .select()
       .single();
     if (data) {
-      set({ profile: normalizeProfile(data) });
+      set((state) => ({
+        profile: normalizeProfile(data),
+        taskCompletions: [claimed as TaskCompletion, ...state.taskCompletions],
+      }));
       return true;
     }
     return false;
