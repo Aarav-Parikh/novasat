@@ -100,6 +100,10 @@ export interface TaskCompletion {
   completed_on: string;
 }
 
+const DAILY_SP_KEY_PREFIX = "daily-sp::";
+
+const sessionDate = (createdAt?: string) => createdAt?.slice(0, 10);
+
 export interface FocusTimerState {
   duration: number;
   endsAt: number | null;
@@ -376,6 +380,8 @@ export const useNova = create<NovaState>((set, get) => ({
       }));
     }
   },
+
+  
 
   awardFocusXP: async (minutes) => {
     const profile = get().profile;
