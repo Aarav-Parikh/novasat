@@ -56,7 +56,7 @@ const isCorrectAnswer = (q: Question, answer: AnswerValue | undefined) => {
   if (q.responseType === "spr") return normalizeSPR(answer) === normalizeSPR(q.correctText ?? q.choices[q.correct]);
   return answer === q.correct;
 };
-const answerIndex = (q: Question, answer: AnswerValue | undefined) => typeof answer === "number" ? answer : q.correct;
+const answerIndex = (answer: AnswerValue | undefined) => typeof answer === "number" ? answer : null;
 
 const TestSession = () => {
   const { mode = "full" } = useParams();
@@ -269,7 +269,7 @@ const TestSession = () => {
       } else {
         const elapsed = timeByQuestion[qq.id] ?? Math.round(sessionTime / Math.max(1, questions.length));
         const reason: ErrorReason = elapsed > 90 ? "Time Pressure" : qq.section === "Reading & Writing" ? "Misreading" : "Concept Gap";
-        tasks.push(recordMistake({ question: qq, userChoice: answerIndex(qq, answer), timeSpent: elapsed, reason }));
+        tasks.push(recordMistake({ question: qq, userChoice: answerIndex(answer), timeSpent: elapsed, reason }));
       }
     }
     // Apply XP optimistically in one shot — no per-question DB round-trips
