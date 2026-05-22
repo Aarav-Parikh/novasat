@@ -488,7 +488,7 @@ export const useNova = create<NovaState>((set, get) => ({
     const profile = get().profile;
     if (!profile) return;
 
-    const { data } = await supabase
+    const { data, error: sessionError } = await supabase
       .from("sessions")
       .insert({
         user_id: profile.id,
@@ -500,6 +500,7 @@ export const useNova = create<NovaState>((set, get) => ({
       })
       .select("id,created_at,score,total,duration_seconds,mode,xp_earned")
       .single();
+    if (sessionError) throw sessionError;
 
     const today = todayDate();
     const lastSessionDate = get().sessions[0]?.created_at?.slice(0, 10);
@@ -526,17 +527,18 @@ export const useNova = create<NovaState>((set, get) => ({
     // Treats: 1 per 5 correct (only when not a review redo)
     const treatsAwarded = mode === "review" ? 0 : treatsFromCorrect(score);
 
-    const { data: updatedProfile } = await supabase
+    const { data: updatedProfile, error: profileError } = await supabase
       .from("profiles")
       .update({
         streak: nextStreak,
-        xp: profile.xp,
+        xp: profile.xp + xpEarned,
         sp: profile.sp + spAwarded,
         treats: profile.treats + treatsAwarded,
       })
       .eq("id", profile.id)
       .select()
       .single();
+    if (profileError) throw profileError;
 
     set((state) => ({
       sessions: data ? [data as SessionSummary, ...state.sessions] : state.sessions,
