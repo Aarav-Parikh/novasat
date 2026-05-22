@@ -404,14 +404,17 @@ function WakeUpQuiz({ onClose }: { onClose: () => void }) {
             description: e?.message ?? "Try again in a moment.",
             variant: "destructive",
           });
-          onClose();
+          onCloseRef.current();
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [onClose]);
+    // Intentionally run only once on mount — onClose changes each parent render
+    // and would otherwise re-trigger question generation mid-quiz.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const q = questions[idx];
   const allAnswered = questions.length > 0 && questions.every((qq) => answers[qq.id] !== undefined);
@@ -423,18 +426,14 @@ function WakeUpQuiz({ onClose }: { onClose: () => void }) {
     const profileNow = useNova.getState().profile;
     if (profileNow) {
       const { supabase } = await import("@/integrations/supabase/client");
-      const { data } = await supabase
+      await supabase
         .from("profiles")
         .update({
           pet_energy: 100,
           pet_last_decay_at: new Date().toISOString(),
         })
-        .eq("id", profileNow.id)
-        .select()
-        .single();
-      if (data) {
-        await syncProfile();
-      }
+        .eq("id", profileNow.id);
+      await syncProfile();
     }
     setReviving(false);
     setRevived(true);
