@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Cookie, Heart, Moon, Sparkles, Sun, ChevronRight, Loader2, CircleCheck as CheckCircle2, Circle as XCircle } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
