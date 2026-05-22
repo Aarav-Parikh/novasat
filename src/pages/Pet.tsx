@@ -15,9 +15,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { generateQuestions } from "@/lib/generate-questions";
 import { Question } from "@/lib/novaprep-data";
-import petEnergeticImg from "@/assets/pet-energetic.png";
-import petTiredImg from "@/assets/pet-tired.png";
-import petAsleepImg from "@/assets/pet-asleep.png";
+import petStagesImg from "@/assets/pet-stages-consistent.png";
 
 const moodCopy: Record<PetMood, { title: string; subtitle: string }> = {
   energetic: {
@@ -34,10 +32,10 @@ const moodCopy: Record<PetMood, { title: string; subtitle: string }> = {
   },
 };
 
-const moodImg: Record<PetMood, string> = {
-  energetic: petEnergeticImg,
-  tired: petTiredImg,
-  asleep: petAsleepImg,
+const moodPosition: Record<PetMood, string> = {
+  asleep: "0% 50%",
+  tired: "50% 50%",
+  energetic: "100% 50%",
 };
 
 const moodAccent: Record<PetMood, string> = {
@@ -218,15 +216,11 @@ const Pet = () => {
           </div>
 
           <div className="relative mx-auto w-full max-w-sm aspect-square flex items-center justify-center">
-            <img
-              src={moodImg[mood]}
-              alt={`Buddy looking ${mood}`}
-              width={512}
-              height={512}
-              loading="lazy"
-              className={`w-full h-full object-contain drop-shadow-[0_10px_40px_hsl(var(--primary)/0.35)] ${
-                mood === "energetic" ? "animate-float" : ""
-              }`}
+            <div
+              role="img"
+              aria-label={`Buddy looking ${mood}`}
+              className={`w-full h-full bg-no-repeat drop-shadow-[0_10px_40px_hsl(var(--primary)/0.35)] ${mood === "energetic" ? "animate-float" : ""}`}
+              style={{ backgroundImage: `url(${petStagesImg})`, backgroundSize: "300% 100%", backgroundPosition: moodPosition[mood] }}
             />
             {/* Cosmetic chips overlay */}
             {equippedItems.length > 0 && (
