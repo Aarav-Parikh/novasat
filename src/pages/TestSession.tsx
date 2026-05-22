@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Clock, Flag, X, ChevronRight, Rocket, Loader as Loader2, TriangleAlert as AlertTriangle, Coffee, CircleCheck as CheckCircle2, Circle as XCircle, Cookie } from "lucide-react";
+import { Clock, Flag, X, ChevronRight, Rocket, Loader as Loader2, TriangleAlert as AlertTriangle, Coffee, CircleCheck as CheckCircle2, Circle as XCircle } from "lucide-react";
 import { Question, ErrorReason, xpForDifficulty } from "@/lib/novaprep-data";
 import { useNova } from "@/lib/novaprep-store";
 import { generateQuestions } from "@/lib/generate-questions";
@@ -64,7 +64,6 @@ const TestSession = () => {
   const [searchParams] = useSearchParams();
   const nav = useNavigate();
   const recordMistake = useNova((s) => s.recordMistake);
-  const awardXP = useNova((s) => s.awardXP);
   const recordSession = useNova((s) => s.recordSession);
   const resolveMistake = useNova((s) => s.resolveMistake);
   const markTaskComplete = useNova((s) => s.markTaskComplete);
@@ -122,9 +121,11 @@ const TestSession = () => {
 
   const prepareQuestions = (qs: Question[]): Question[] => qs.map((question): Question => shuffleChoices({
     ...question,
-    responseType: question.responseType === "spr" ? "spr" : "multiple-choice",
+    responseType: question.section === "Math" && question.responseType === "spr" ? "spr" : "multiple-choice",
+    correct: Number.isInteger(question.correct) && question.correct >= 0 && question.correct <= 3 ? question.correct : 0,
+    correctText: question.responseType === "spr" ? question.correctText : question.choices[question.correct] ?? question.correctText,
     explanation: cleanExplanation(question.explanation),
-  }));
+  })).filter((question) => question.responseType === "spr" || Boolean(question.choices[question.correct]));
 
   const loadQuestions = async (bias: "balanced" | "easier" | "harder", targetModule = module) => {
     setLoading(true);
@@ -152,7 +153,7 @@ const TestSession = () => {
         const requestedSection = m === "full" ? fullSection : modeSection;
         const modeTopic = requestedTopic && requestedTopic !== "Mixed SAT Skills" ? requestedTopic : undefined;
         // Request extra questions to account for potential section mismatches
-        const requestCount = m === "full" ? (targetModule === 1 ? 54 : 44) : MODULE_SIZE[m] + 6;
+        const requestCount = m === "full" ? (targetModule === 1 ? 54 : 44) : MODULE_SIZE[m];
         const qs = await generateQuestions({
           mode: m === "review" ? "redemption" : m,
           count: requestCount,
