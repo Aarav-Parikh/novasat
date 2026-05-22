@@ -302,19 +302,37 @@ export const useNova = create<NovaState>((set, get) => ({
           .eq("completed_on", today),
       ]);
 
+    let profileData = profileRes.data;
+    if (!profileData) {
+      const { data: created } = await supabase
+        .from("profiles")
+        .insert({ id: userId })
+        .select("*")
+        .maybeSingle();
+      profileData = created ?? null;
+      if (!profileData) {
+        const { data: existing } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .maybeSingle();
+        profileData = existing ?? null;
+      }
+    }
+
     set({
-      profile: normalizeProfile(profileRes.data),
+      profile: normalizeProfile(profileData),
       mistakes: dedupeMistakes(((mistakesRes.data as MistakeRecord[]) ?? [])),
       sessions: (sessionsRes.data as SessionSummary[]) ?? [],
       taskCompletions: (taskCompletionsRes.data as TaskCompletion[]) ?? [],
       loading: false,
     });
 
-    if (profileRes.data) {
+    if (profileData) {
       // Streak reset
       const lastSessionDate = (sessionsRes.data as SessionSummary[] | null)?.[0]
         ?.created_at?.slice(0, 10);
-      const currentStreak = (profileRes.data as any).streak ?? 0;
+      const currentStreak = (profileData as any).streak ?? 0;
       if (currentStreak > 0) {
         const todayMs = new Date(`${today}T00:00:00`).getTime();
         const lastMs = lastSessionDate
