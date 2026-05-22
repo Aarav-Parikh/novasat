@@ -103,6 +103,7 @@ export interface TaskCompletion {
 const DAILY_SP_KEY_PREFIX = "daily-sp::";
 
 const sessionDate = (createdAt?: string) => createdAt?.slice(0, 10);
+const dailySPTaskKey = (date = todayDate()) => `${DAILY_SP_KEY_PREFIX}${date}`;
 
 export interface FocusTimerState {
   duration: number;
