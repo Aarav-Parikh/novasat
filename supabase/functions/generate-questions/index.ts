@@ -52,6 +52,42 @@ type GeneratedQuestion = {
   explanation: string;
 };
 
+const cleanText = (value: unknown) => String(value ?? "").replace(/\s+/g, " ").trim();
+const numericAnswerPattern = /^-?(?:\d+(?:\.\d+)?|\.\d+|\d+\/\d+)(?:\s*(?:%|°))?$/;
+
+function sanitizeGeneratedQuestion(q: GeneratedQuestion): GeneratedQuestion | null {
+  if (!q || !q.section || !q.prompt || !Array.isArray(q.choices) || q.choices.length < 4) return null;
+  const responseType: ResponseType = q.responseType === "spr" && q.section === "Math" ? "spr" : "multiple-choice";
+  const choices = q.choices.slice(0, 4).map(cleanText);
+  let correct = Number.isInteger(q.correct) && q.correct >= 0 && q.correct <= 3 ? q.correct : 0;
+  let correctText = cleanText(q.correctText || choices[correct]);
+
+  if (responseType === "multiple-choice") {
+    if (correctText && !choices.some((choice) => choice.toLowerCase() === correctText.toLowerCase())) {
+      choices[correct] = correctText;
+    } else if (!correctText) {
+      correctText = choices[correct];
+    }
+  } else {
+    const candidate = correctText || choices[correct];
+    if (!candidate || !numericAnswerPattern.test(candidate)) return null;
+    correctText = candidate;
+    if (!choices.some((choice) => cleanText(choice).toLowerCase() === correctText.toLowerCase())) choices[correct] = correctText;
+  }
+
+  return {
+    ...q,
+    responseType,
+    choices,
+    correct,
+    correctText,
+    prompt: cleanText(q.prompt),
+    passage: q.passage ? cleanText(q.passage) : undefined,
+    topic: cleanText(q.topic),
+    explanation: cleanText(q.explanation),
+  };
+}
+
 type BatchResult =
   | { retryable: false; questions: GeneratedQuestion[] }
   | { retryable: boolean; rateLimited?: boolean; error: string };
@@ -116,7 +152,7 @@ async function requestQuestionBatch(params: {
         messages: [
           {
             role: "system",
-            content: `${systemPrompt}\n\nOUTPUT FORMAT: Respond with ONLY a valid JSON object (no prose, no markdown fences) of the exact shape: {"questions":[ {"section":"Math"|"Reading & Writing","topic":string,"difficulty":"easy"|"medium"|"hard","passage":string?,"prompt":string,"choices":[string,string,string,string],"correct":0|1|2|3,"responseType":"multiple-choice"|"spr","correctText":string?,"explanation":string} ]}. EVERY question MUST include all 4 choices and a correct index 0-3 — even SPR questions must still provide 4 plausible numeric choices with the correct one at index "correct" AND a correctText field. Never omit choices. Never add fields outside this schema.`,
+            content: `${systemPrompt}\n\nOUTPUT FORMAT: Respond with ONLY a valid JSON object (no prose, no markdown fences) of the exact shape: {"questions":[ {"section":"Math"|"Reading & Writing","topic":string,"difficulty":"easy"|"medium"|"hard","passage":string?,"prompt":string,"choices":[string,string,string,string],"correct":0|1|2|3,"responseType":"multiple-choice"|"spr","correctText":string,"explanation":string} ]}. EVERY multiple-choice question MUST have exactly one correct answer in choices[correct], and correctText MUST be the exact text of that correct choice. EVERY SPR question must provide a concise numeric correctText and 4 plausible numeric choices with the correct one at index "correct". Never omit choices. Never add fields outside this schema.`,
           },
           { role: "user", content: userPrompt },
         ],
@@ -159,11 +195,7 @@ async function requestQuestionBatch(params: {
     if (!parsed) return { retryable: true as const, error: "Invalid JSON returned" };
     const questions = (parsed?.questions ?? []) as GeneratedQuestion[];
     // Defensive: filter out any malformed entries instead of failing the whole batch
-    const valid = questions.filter(
-      (q) =>
-        q && q.section && q.prompt && Array.isArray(q.choices) && q.choices.length === 4 &&
-        Number.isInteger(q.correct) && q.correct >= 0 && q.correct <= 3 && q.explanation,
-    );
+    const valid = questions.map(sanitizeGeneratedQuestion).filter((q): q is GeneratedQuestion => Boolean(q?.explanation));
     if (!valid.length) return { retryable: true as const, error: "No valid questions returned" };
     return { retryable: false as const, questions: valid };
   } catch (error) {
