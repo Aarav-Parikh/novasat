@@ -8,7 +8,6 @@ import {
   CosmeticSlot,
 } from "@/lib/novaprep-store";
 import { toast } from "@/hooks/use-toast";
-import { useEffect, useState } from "react";
 
 const slotLabel: Record<CosmeticSlot, string> = {
   hat: "Headwear",
@@ -21,26 +20,17 @@ const Store = () => {
   const buy = useNova((s) => s.buyCosmetic);
   const equip = useNova((s) => s.equipCosmetic);
   const claimDailySP = useNova((s) => s.claimDailySP);
+  const taskCompletions = useNova((s) => s.taskCompletions);
   const sp = profile?.sp ?? 0;
   const owned = profile?.cosmetics ?? [];
   const equipped = profile?.equipped ?? {};
-  const [claimedToday, setClaimedToday] = useState(false);
-
-  const dailyKey = profile
-    ? `np_daily_sp_${profile.id}_${new Date().toISOString().slice(0, 10)}`
-    : "";
-
-  useEffect(() => {
-    if (!dailyKey) return;
-    setClaimedToday(localStorage.getItem(dailyKey) === "1");
-  }, [dailyKey]);
+  const today = new Date().toISOString().slice(0, 10);
+  const claimedToday = taskCompletions.some((item) => item.task_key === `daily-sp::${today}`);
 
   const onClaimDaily = async () => {
     if (claimedToday) return;
     const ok = await claimDailySP(25);
     if (ok) {
-      localStorage.setItem(dailyKey, "1");
-      setClaimedToday(true);
       toast({
         title: "+25 SP claimed",
         description: "Come back tomorrow for another daily bonus.",
