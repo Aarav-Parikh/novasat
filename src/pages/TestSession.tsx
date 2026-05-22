@@ -266,7 +266,7 @@ const TestSession = () => {
         const sourceMistakeId = qq.id.startsWith("redo:") ? qq.id.split(":")[1] : null;
         if (sourceMistakeId) tasks.push(resolveMistake(sourceMistakeId));
         gained += xpForDifficulty(qq.difficulty);
-      } else if (answer !== undefined && !isSkipped(answer)) {
+      } else {
         const elapsed = timeByQuestion[qq.id] ?? Math.round(sessionTime / Math.max(1, questions.length));
         const reason: ErrorReason = elapsed > 90 ? "Time Pressure" : qq.section === "Reading & Writing" ? "Misreading" : "Concept Gap";
         tasks.push(recordMistake({ question: qq, userChoice: answerIndex(qq, answer), timeSpent: elapsed, reason }));
@@ -283,7 +283,7 @@ const TestSession = () => {
     return { correct, gained };
   };
 
-  const finishSession = async (correct: number, total: number, gained: number) => {
+  const finishSession = async (correct: number, total: number, sessionXpEarned: number) => {
     // Snapshot for the answer key BEFORE marking done so the UI can render it.
     setAnswerKey({ questions: [...questions], answers: { ...answers } });
     setDone(true);
@@ -293,7 +293,7 @@ const TestSession = () => {
         score: correct + completed.correct,
         total: total + completed.total,
         duration: sessionTimeRef.current + completed.seconds,
-        xpEarned: xpEarned + completed.xp + gained,
+        xpEarned: sessionXpEarned,
       });
       if (taskLabel && dayLabel) await markTaskComplete({ taskKey: taskCompletionKey(dayLabel, taskLabel), taskLabel, dayLabel });
       // Re-sync profile from DB to ensure XP display is accurate everywhere
@@ -332,7 +332,9 @@ const TestSession = () => {
         loadQuestions(harder ? "harder" : "easier", 2).catch(() => {});
         return;
       }
-      await finishSession(result.correct, questions.length, result.gained);
+      const sessionXpEarned = completed.xp + result.gained;
+      setXpEarned(sessionXpEarned);
+      await finishSession(result.correct, questions.length, sessionXpEarned);
       setReviewing(false);
     } finally {
       setSubmitting(false);
