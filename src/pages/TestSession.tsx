@@ -272,11 +272,6 @@ const TestSession = () => {
         tasks.push(recordMistake({ question: qq, userChoice: answerIndex(answer), timeSpent: elapsed, reason }));
       }
     }
-    // Apply XP optimistically in one shot — no per-question DB round-trips
-    const profile = useNova.getState().profile;
-    if (profile) {
-      useNova.setState({ profile: { ...profile, xp: profile.xp + gained, streak: Math.max(1, profile.streak || 0) } });
-    }
     setXpEarned((x) => x + gained);
     await Promise.allSettled(tasks);
     return { correct, gained };
