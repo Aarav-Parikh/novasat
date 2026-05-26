@@ -15,7 +15,9 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { generateQuestions } from "@/lib/generate-questions";
 import { Question } from "@/lib/novaprep-data";
-import petStagesImg from "@/assets/pet-stages-consistent.png";
+import petEnergeticImg from "@/assets/pet-energetic.png";
+import petTiredImg from "@/assets/pet-tired.png";
+import petAsleepImg from "@/assets/pet-asleep.png";
 
 const moodCopy: Record<PetMood, { title: string; subtitle: string }> = {
   energetic: {
