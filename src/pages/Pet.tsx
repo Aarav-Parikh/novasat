@@ -224,22 +224,37 @@ const Pet = () => {
               className={`w-full h-full bg-no-repeat bg-center bg-contain drop-shadow-[0_10px_40px_hsl(var(--primary)/0.35)] ${mood === "energetic" ? "animate-float" : ""}`}
               style={{ backgroundImage: `url(${moodImage[mood]})` }}
             />
-            {/* Cosmetic chips overlay */}
-            {equippedItems.length > 0 && (
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-                {equippedItems.map(
-                  (c) =>
-                    c && (
-                      <span
-                        key={c.id}
-                        className="text-xl rounded-full bg-background/70 backdrop-blur px-2 py-1 border border-border"
-                        title={c.label}
-                      >
-                        {c.emoji}
-                      </span>
-                    ),
+            {/* Cosmetic overlays — positioned over the pet image. Hidden when asleep (curled pose). */}
+            {mood !== "asleep" && (
+              <>
+                {equippedHat && (
+                  <span
+                    className="absolute pointer-events-none select-none drop-shadow-lg"
+                    style={{ top: "12%", left: "50%", transform: "translateX(-50%) rotate(-6deg)", fontSize: "3.5rem", lineHeight: 1 }}
+                    title={COSMETIC_CATALOG.find((c) => c.id === equippedHat)?.label}
+                  >
+                    {COSMETIC_CATALOG.find((c) => c.id === equippedHat)?.emoji}
+                  </span>
                 )}
-              </div>
+                {equippedNeck && (
+                  <span
+                    className="absolute pointer-events-none select-none drop-shadow-lg"
+                    style={{ top: "52%", left: "50%", transform: "translateX(-50%)", fontSize: "2.25rem", lineHeight: 1 }}
+                    title={COSMETIC_CATALOG.find((c) => c.id === equippedNeck)?.label}
+                  >
+                    {COSMETIC_CATALOG.find((c) => c.id === equippedNeck)?.emoji}
+                  </span>
+                )}
+                {equippedOutfit && (
+                  <span
+                    className="absolute pointer-events-none select-none drop-shadow-lg"
+                    style={{ top: "68%", left: "50%", transform: "translateX(-50%)", fontSize: "3rem", lineHeight: 1, opacity: 0.92 }}
+                    title={COSMETIC_CATALOG.find((c) => c.id === equippedOutfit)?.label}
+                  >
+                    {COSMETIC_CATALOG.find((c) => c.id === equippedOutfit)?.emoji}
+                  </span>
+                )}
+              </>
             )}
           </div>
 
