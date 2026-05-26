@@ -433,29 +433,21 @@ function WakeUpQuiz({ onClose }: { onClose: () => void }) {
   const q = questions[idx];
   const allAnswered = questions.length > 0 && questions.every((qq) => answers[qq.id] !== undefined);
 
-  const submit = async () => {
-    setDone(true);
-    setReviving(true);
-    // Revive Buddy regardless of score (it's a wake-up, not a grade)
-    const profileNow = useNova.getState().profile;
-    if (profileNow) {
-      const { supabase } = await import("@/integrations/supabase/client");
-      await supabase
-        .from("profiles")
-        .update({
-          pet_energy: 100,
-          pet_last_decay_at: new Date().toISOString(),
-        })
-        .eq("id", profileNow.id);
-      await syncProfile();
-    }
-    setReviving(false);
-    setRevived(true);
-  };
-
   const correctCount = questions.filter(
     (qq) => answers[qq.id] === qq.correct,
   ).length;
+
+  const submit = async () => {
+    setDone(true);
+    setReviving(true);
+    const total = questions.length;
+    const score = questions.filter((qq) => answers[qq.id] === qq.correct).length;
+    const { supabase } = await import("@/integrations/supabase/client");
+    await supabase.rpc("wake_up_pet", { _score: score, _total: total });
+    await syncProfile();
+    setReviving(false);
+    setRevived(true);
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/85 backdrop-blur-xl p-4 animate-fade-in">
