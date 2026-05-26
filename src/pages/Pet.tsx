@@ -462,10 +462,10 @@ function WakeUpQuiz({ onClose }: { onClose: () => void }) {
         ) : revived ? (
           <div className="text-center py-4">
             <div className="text-6xl mb-3">🌟</div>
-            <h2 className="font-display text-3xl font-bold">Buddy is wide awake!</h2>
+            <h2 className="font-display text-3xl font-bold">Buddy is awake!</h2>
             <p className="text-sm text-muted-foreground mt-2">
-              You got {correctCount} of {questions.length} correct. Energy
-              restored to 100%.
+              You got {correctCount} of {questions.length} correct. Energy set
+              to <span className="text-foreground font-semibold">{Math.round((correctCount / Math.max(1, questions.length)) * 100)}%</span>.
             </p>
             <button
               onClick={onClose}
