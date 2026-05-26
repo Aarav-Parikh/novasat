@@ -34,10 +34,10 @@ const moodCopy: Record<PetMood, { title: string; subtitle: string }> = {
   },
 };
 
-const moodPosition: Record<PetMood, string> = {
-  asleep: "0% 50%",
-  tired: "50% 50%",
-  energetic: "100% 50%",
+const moodImage: Record<PetMood, string> = {
+  asleep: petAsleepImg,
+  tired: petTiredImg,
+  energetic: petEnergeticImg,
 };
 
 const moodAccent: Record<PetMood, string> = {
