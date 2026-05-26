@@ -373,7 +373,7 @@ const TestSession = () => {
         <div className="starfield" />
         <div className="relative z-10 flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 text-secondary animate-spin" />
-          <div className="text-sm text-muted-foreground font-mono">Generating unique questions…</div>
+          <div className="text-sm text-muted-foreground font-mono">Please wait while we generate unique questions…</div>
         </div>
       </div>
     );

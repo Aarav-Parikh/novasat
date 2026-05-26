@@ -216,9 +216,9 @@ async function generateBatchWithFallback(params: {
   userPrompt: string;
 }): Promise<GeneratedQuestion[]> {
   const attempts = [
-    { model: "mistral-large-latest", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
-    { model: "mistral-medium-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
     { model: "mistral-small-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "mistral-medium-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
+    { model: "mistral-large-latest", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
   ] as const;
 
   let lastError = "AI gateway error";
@@ -347,12 +347,11 @@ Deno.serve(async (req) => {
     const systemPrompt = buildSystemPrompt();
     const collected: GeneratedQuestion[] = [];
     const batchErrors: string[] = [];
-    // Run sequentially to avoid provider rate limits, with small inter-batch
-    // delay. Tolerate individual batch failures and return whatever we got.
-    for (let batchIndex = 0; batchIndex < batchSizes.length; batchIndex++) {
-      const batchCount = batchSizes[batchIndex];
+    let hardStop: { status: number; message: string } | null = null;
+
+    const batchResults = await mapWithConcurrency(batchSizes, 2, async (batchCount, batchIndex) => {
       try {
-        const qs = await generateBatchWithFallback({
+        return await generateBatchWithFallback({
           apiKey: MISTRAL_API_KEY,
           systemPrompt,
           userPrompt: buildUserPrompt({
@@ -366,28 +365,30 @@ Deno.serve(async (req) => {
             sprCount: sprDistribution[batchIndex] ?? 0,
           }),
         });
-        collected.push(...qs);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Batch failed";
         console.error(`Batch ${batchIndex + 1}/${batchSizes.length} failed:`, message);
         batchErrors.push(message);
-        // Hard-stop only on auth/credit failures — those won't recover
-        if (/authentication failed|credits exhausted/i.test(message)) {
-          if (collected.length === 0) {
-            const status = /credits exhausted/i.test(message) ? 402 : 401;
-            return new Response(JSON.stringify({ error: message }), {
-              status,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          break;
-        }
+        if (/authentication failed/i.test(message)) hardStop = { status: 401, message };
+        else if (/credits exhausted/i.test(message)) hardStop = { status: 402, message };
+        return [] as GeneratedQuestion[];
       }
-      // Brief pause between batches to ease provider rate limiting
-      if (batchIndex < batchSizes.length - 1) await sleep(400);
+    });
+    for (const qs of batchResults) collected.push(...qs);
+
+    if (hardStop && collected.length === 0) {
+      return new Response(JSON.stringify({ error: hardStop.message }), {
+        status: hardStop.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const questions = collected.slice(0, count);
+    // Enforce section filter so a Math drill never gets reading questions (and vice-versa)
+    const sectionFiltered = effectiveSection
+      ? collected.filter((q) => q.section === effectiveSection)
+      : collected;
+
+    const questions = sectionFiltered.slice(0, count);
     // Require at least a usable minimum so the session isn't stuck on 1 question
     const minUsable = Math.min(count, Math.max(4, Math.floor(count * 0.4)));
     if (questions.length < minUsable) {
