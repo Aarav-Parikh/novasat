@@ -372,6 +372,13 @@ export type Database = {
         Args: { _amount?: number; _user_id: string }
         Returns: number
       }
+      buy_cosmetic: { Args: { _cosmetic_id: string }; Returns: Json }
+      claim_daily_sp: { Args: never; Returns: Json }
+      equip_cosmetic: {
+        Args: { _cosmetic_id: string; _slot: string }
+        Returns: Json
+      }
+      feed_pet: { Args: { _treats: number }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -379,6 +386,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      record_session_rewards: {
+        Args: {
+          _duration: number
+          _mode: string
+          _score: number
+          _total: number
+          _xp: number
+        }
+        Returns: Json
+      }
+      sync_pet_decay: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"

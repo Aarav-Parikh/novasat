@@ -488,61 +488,40 @@ export const useNova = create<NovaState>((set, get) => ({
     const profile = get().profile;
     if (!profile) return;
 
-    const { data, error: sessionError } = await supabase
-      .from("sessions")
-      .insert({
-        user_id: profile.id,
-        mode,
-        score,
-        total,
-        duration_seconds: duration,
-        xp_earned: xpEarned,
-      })
-      .select("id,created_at,score,total,duration_seconds,mode,xp_earned")
-      .single();
-    if (sessionError) throw sessionError;
+    const { data: result, error } = await supabase.rpc("record_session_rewards", {
+      _mode: mode,
+      _score: score,
+      _total: total,
+      _duration: duration,
+      _xp: xpEarned,
+    });
+    if (error) throw error;
 
-    const today = todayDate();
-    const lastSessionDate = get().sessions[0]?.created_at?.slice(0, 10);
-    let nextStreak = profile.streak || 0;
+    const payload = (result ?? {}) as {
+      session_id?: string;
+      xp_awarded?: number;
+      sp_awarded?: number;
+      treats_awarded?: number;
+      streak?: number;
+    };
+    const spAwarded = payload.sp_awarded ?? 0;
+    const treatsAwarded = payload.treats_awarded ?? 0;
 
-    if (lastSessionDate === today) nextStreak = Math.max(1, nextStreak);
-    else if (!lastSessionDate) nextStreak = 1;
-    else {
-      const diffDays = Math.round(
-        (new Date(`${today}T00:00:00`).getTime() -
-          new Date(`${lastSessionDate}T00:00:00`).getTime()) /
-          86400000,
-      );
-      nextStreak = diffDays === 1 ? nextStreak + 1 : 1;
-    }
-
-    // Pet-driven SP multiplier
-    const mood = moodForEnergy(
-      computeCurrentEnergy(profile.pet_energy, profile.pet_last_decay_at),
-    );
-    const spMult = spMultiplierFromPet(mood);
-    const spAwarded = Math.round(5 * spMult);
-
-    // Treats: 1 per 5 correct (only when not a review redo)
-    const treatsAwarded = mode === "review" ? 0 : treatsFromCorrect(score);
-
-    const { data: updatedProfile, error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        streak: nextStreak,
-        xp: profile.xp + xpEarned,
-        sp: profile.sp + spAwarded,
-        treats: profile.treats + treatsAwarded,
-      })
-      .eq("id", profile.id)
-      .select()
-      .single();
-    if (profileError) throw profileError;
+    const [{ data: freshProfile }, sessionRes] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", profile.id).maybeSingle(),
+      payload.session_id
+        ? supabase
+            .from("sessions")
+            .select("id,created_at,score,total,duration_seconds,mode,xp_earned")
+            .eq("id", payload.session_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null as SessionSummary | null }),
+    ]);
+    const freshSession = (sessionRes as { data: SessionSummary | null }).data;
 
     set((state) => ({
-      sessions: data ? [data as SessionSummary, ...state.sessions] : state.sessions,
-      profile: normalizeProfile(updatedProfile) ?? state.profile,
+      sessions: freshSession ? [freshSession, ...state.sessions] : state.sessions,
+      profile: freshProfile ? normalizeProfile(freshProfile) ?? state.profile : state.profile,
     }));
 
     return { treatsAwarded, spAwarded };
@@ -578,40 +557,29 @@ export const useNova = create<NovaState>((set, get) => ({
     }
   },
 
-  claimDailySP: async (amount) => {
+  claimDailySP: async (_amount) => {
     const profile = get().profile;
     if (!profile) return false;
-    const today = todayDate();
-    const taskKey = dailySPTaskKey(today);
-    if (get().taskCompletions.some((item) => item.task_key === taskKey && item.completed_on === today)) return false;
 
-    const { data: claimed, error: claimError } = await supabase
-      .from("task_completions")
-      .insert({
-        user_id: profile.id,
-        task_key: taskKey,
-        task_label: "Daily SP bonus",
-        day_label: "Today",
-        completed_on: today,
-      })
-      .select("id,task_key,task_label,day_label,completed_on")
-      .single();
-    if (claimError || !claimed) return false;
+    const { data, error } = await supabase.rpc("claim_daily_sp");
+    if (error) return false;
+    const result = (data ?? {}) as { claimed?: boolean };
+    if (!result.claimed) return false;
 
-    const { data } = await supabase
-      .from("profiles")
-      .update({ sp: profile.sp + amount })
-      .eq("id", profile.id)
-      .select()
-      .single();
-    if (data) {
-      set((state) => ({
-        profile: normalizeProfile(data),
-        taskCompletions: [claimed as TaskCompletion, ...state.taskCompletions],
-      }));
-      return true;
-    }
-    return false;
+    const [{ data: freshProfile }, { data: freshTasks }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", profile.id).maybeSingle(),
+      supabase
+        .from("task_completions")
+        .select("id,task_key,task_label,day_label,completed_on")
+        .eq("user_id", profile.id)
+        .order("created_at", { ascending: false }),
+    ]);
+
+    set((state) => ({
+      profile: freshProfile ? normalizeProfile(freshProfile) ?? state.profile : state.profile,
+      taskCompletions: (freshTasks as TaskCompletion[] | null) ?? state.taskCompletions,
+    }));
+    return true;
   },
 
   // ---------- Pet ----------
@@ -623,89 +591,74 @@ export const useNova = create<NovaState>((set, get) => ({
       profile.pet_energy,
       profile.pet_last_decay_at,
     );
-    // Persist if the displayed energy materially drifted from the stored value
-    if (Math.abs(current - profile.pet_energy) >= 1) {
-      const { data } = await supabase
-        .from("profiles")
-        .update({
-          pet_energy: Math.round(current),
-          pet_last_decay_at: new Date().toISOString(),
-        })
-        .eq("id", profile.id)
-        .select()
-        .single();
-      if (data) set({ profile: normalizeProfile(data) });
-    }
+    if (Math.abs(current - profile.pet_energy) < 1) return;
+
+    const { error } = await supabase.rpc("sync_pet_decay");
+    if (error) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", profile.id)
+      .maybeSingle();
+    if (data) set({ profile: normalizeProfile(data) });
   },
 
   feedPet: async (treats) => {
     const profile = get().profile;
     if (!profile) return false;
     const n = Math.max(1, Math.floor(treats));
-    if (profile.treats < n) return false;
-    const current = computeCurrentEnergy(
-      profile.pet_energy,
-      profile.pet_last_decay_at,
-    );
-    const nextEnergy = Math.min(100, current + n * 5);
-    const { data } = await supabase
+
+    const { data, error } = await supabase.rpc("feed_pet", { _treats: n });
+    if (error) return false;
+    const result = (data ?? {}) as { ok?: boolean };
+    if (!result.ok) return false;
+
+    const { data: fresh } = await supabase
       .from("profiles")
-      .update({
-        treats: profile.treats - n,
-        pet_energy: Math.round(nextEnergy),
-        pet_last_decay_at: new Date().toISOString(),
-      })
+      .select("*")
       .eq("id", profile.id)
-      .select()
-      .single();
-    if (data) {
-      set({ profile: normalizeProfile(data) });
-      return true;
-    }
-    return false;
+      .maybeSingle();
+    if (fresh) set({ profile: normalizeProfile(fresh) });
+    return true;
   },
 
   buyCosmetic: async (cosmeticId) => {
     const profile = get().profile;
     if (!profile) return false;
-    const item = COSMETIC_CATALOG.find((c) => c.id === cosmeticId);
-    if (!item) return false;
-    if (profile.cosmetics.includes(cosmeticId)) return false;
-    if (profile.sp < item.cost) return false;
-    const { data } = await supabase
+
+    const { data, error } = await supabase.rpc("buy_cosmetic", { _cosmetic_id: cosmeticId });
+    if (error) return false;
+    const result = (data ?? {}) as { ok?: boolean };
+    if (!result.ok) return false;
+
+    const { data: fresh } = await supabase
       .from("profiles")
-      .update({
-        sp: profile.sp - item.cost,
-        cosmetics: [...profile.cosmetics, cosmeticId],
-      } as any)
+      .select("*")
       .eq("id", profile.id)
-      .select()
-      .single();
-    if (data) {
-      set({ profile: normalizeProfile(data) });
-      return true;
-    }
-    return false;
+      .maybeSingle();
+    if (fresh) set({ profile: normalizeProfile(fresh) });
+    return true;
   },
 
   equipCosmetic: async (slot, cosmeticId) => {
     const profile = get().profile;
     if (!profile) return false;
-    if (cosmeticId && !profile.cosmetics.includes(cosmeticId)) return false;
-    const nextEquipped: Equipped = { ...profile.equipped };
-    if (cosmeticId) nextEquipped[slot] = cosmeticId;
-    else delete nextEquipped[slot];
-    const { data } = await supabase
+
+    const { data, error } = await supabase.rpc("equip_cosmetic", {
+      _slot: slot,
+      _cosmetic_id: cosmeticId ?? "",
+    });
+    if (error) return false;
+    const result = (data ?? {}) as { ok?: boolean };
+    if (!result.ok) return false;
+
+    const { data: fresh } = await supabase
       .from("profiles")
-      .update({ equipped: nextEquipped } as any)
+      .select("*")
       .eq("id", profile.id)
-      .select()
-      .single();
-    if (data) {
-      set({ profile: normalizeProfile(data) });
-      return true;
-    }
-    return false;
+      .maybeSingle();
+    if (fresh) set({ profile: normalizeProfile(fresh) });
+    return true;
   },
 
   reset: () =>
