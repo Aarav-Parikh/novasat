@@ -488,61 +488,40 @@ export const useNova = create<NovaState>((set, get) => ({
     const profile = get().profile;
     if (!profile) return;
 
-    const { data, error: sessionError } = await supabase
-      .from("sessions")
-      .insert({
-        user_id: profile.id,
-        mode,
-        score,
-        total,
-        duration_seconds: duration,
-        xp_earned: xpEarned,
-      })
-      .select("id,created_at,score,total,duration_seconds,mode,xp_earned")
-      .single();
-    if (sessionError) throw sessionError;
+    const { data: result, error } = await supabase.rpc("record_session_rewards", {
+      _mode: mode,
+      _score: score,
+      _total: total,
+      _duration: duration,
+      _xp: xpEarned,
+    });
+    if (error) throw error;
 
-    const today = todayDate();
-    const lastSessionDate = get().sessions[0]?.created_at?.slice(0, 10);
-    let nextStreak = profile.streak || 0;
+    const payload = (result ?? {}) as {
+      session_id?: string;
+      xp_awarded?: number;
+      sp_awarded?: number;
+      treats_awarded?: number;
+      streak?: number;
+    };
+    const spAwarded = payload.sp_awarded ?? 0;
+    const treatsAwarded = payload.treats_awarded ?? 0;
 
-    if (lastSessionDate === today) nextStreak = Math.max(1, nextStreak);
-    else if (!lastSessionDate) nextStreak = 1;
-    else {
-      const diffDays = Math.round(
-        (new Date(`${today}T00:00:00`).getTime() -
-          new Date(`${lastSessionDate}T00:00:00`).getTime()) /
-          86400000,
-      );
-      nextStreak = diffDays === 1 ? nextStreak + 1 : 1;
-    }
-
-    // Pet-driven SP multiplier
-    const mood = moodForEnergy(
-      computeCurrentEnergy(profile.pet_energy, profile.pet_last_decay_at),
-    );
-    const spMult = spMultiplierFromPet(mood);
-    const spAwarded = Math.round(5 * spMult);
-
-    // Treats: 1 per 5 correct (only when not a review redo)
-    const treatsAwarded = mode === "review" ? 0 : treatsFromCorrect(score);
-
-    const { data: updatedProfile, error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        streak: nextStreak,
-        xp: profile.xp + xpEarned,
-        sp: profile.sp + spAwarded,
-        treats: profile.treats + treatsAwarded,
-      })
-      .eq("id", profile.id)
-      .select()
-      .single();
-    if (profileError) throw profileError;
+    const [{ data: freshProfile }, sessionRes] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", profile.id).maybeSingle(),
+      payload.session_id
+        ? supabase
+            .from("sessions")
+            .select("id,created_at,score,total,duration_seconds,mode,xp_earned")
+            .eq("id", payload.session_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null as SessionSummary | null }),
+    ]);
+    const freshSession = (sessionRes as { data: SessionSummary | null }).data;
 
     set((state) => ({
-      sessions: data ? [data as SessionSummary, ...state.sessions] : state.sessions,
-      profile: normalizeProfile(updatedProfile) ?? state.profile,
+      sessions: freshSession ? [freshSession, ...state.sessions] : state.sessions,
+      profile: freshProfile ? normalizeProfile(freshProfile) ?? state.profile : state.profile,
     }));
 
     return { treatsAwarded, spAwarded };
