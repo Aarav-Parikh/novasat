@@ -216,9 +216,9 @@ async function generateBatchWithFallback(params: {
   userPrompt: string;
 }): Promise<GeneratedQuestion[]> {
   const attempts = [
-    { model: "mistral-large-latest", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
-    { model: "mistral-medium-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
     { model: "mistral-small-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "mistral-medium-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
+    { model: "mistral-large-latest", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
   ] as const;
 
   let lastError = "AI gateway error";
