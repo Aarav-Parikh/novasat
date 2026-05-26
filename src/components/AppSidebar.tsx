@@ -25,7 +25,6 @@ const items = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/practice", label: "Practice", icon: Target },
   { to: "/plan", label: "Daily Plan", icon: CalendarDays },
-  { to: "/coach", label: "AI Coach", icon: Sparkles },
   { to: "/articles", label: "Articles", icon: BookOpen },
   { to: "/weak-areas", label: "Weak Areas", icon: TrendingDown },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },

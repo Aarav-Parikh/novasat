@@ -23,15 +23,29 @@ export interface CosmeticItem {
 }
 
 export const COSMETIC_CATALOG: CosmeticItem[] = [
+  // Hats
   { id: "grad_cap", slot: "hat", label: "Graduation Cap", emoji: "🎓", cost: 120, description: "A tiny mortarboard for the diligent scholar." },
   { id: "beanie", slot: "hat", label: "Study Beanie", emoji: "🧢", cost: 60, description: "Cozy cap for late-night drills." },
   { id: "wizard_hat", slot: "hat", label: "Wizard Hat", emoji: "🪄", cost: 180, description: "Channels mystical SAT energy." },
+  { id: "crown", slot: "hat", label: "Royal Crown", emoji: "👑", cost: 300, description: "For the king of the curve." },
+  { id: "cowboy_hat", slot: "hat", label: "Cowboy Hat", emoji: "🤠", cost: 140, description: "Yeehaw, partner." },
+  { id: "party_hat", slot: "hat", label: "Party Hat", emoji: "🥳", cost: 80, description: "Every drill is a party." },
+  { id: "top_hat", slot: "hat", label: "Top Hat", emoji: "🎩", cost: 200, description: "Dapper as can be." },
+  // Neck
   { id: "scarf", slot: "neck", label: "Collegiate Scarf", emoji: "🧣", cost: 90, description: "Striped scarf in school colors." },
   { id: "bowtie", slot: "neck", label: "Bowtie", emoji: "🎀", cost: 50, description: "Sharp little bowtie." },
   { id: "medal", slot: "neck", label: "Gold Medal", emoji: "🥇", cost: 200, description: "Worn by champions of the practice grind." },
+  { id: "bandana", slot: "neck", label: "Bandana", emoji: "🪢", cost: 70, description: "Adventure-ready." },
+  { id: "necktie", slot: "neck", label: "Necktie", emoji: "👔", cost: 110, description: "All business." },
+  { id: "gold_chain", slot: "neck", label: "Gold Chain", emoji: "📿", cost: 260, description: "Drip on point." },
+  // Outfit
   { id: "uniform", slot: "outfit", label: "School Uniform", emoji: "👔", cost: 250, description: "Tiny blazer and tie." },
   { id: "hoodie", slot: "outfit", label: "Campus Hoodie", emoji: "🧥", cost: 150, description: "Cozy hoodie for marathon study sessions." },
   { id: "labcoat", slot: "outfit", label: "Lab Coat", emoji: "🥼", cost: 220, description: "For the future PhD." },
+  { id: "superhero_cape", slot: "outfit", label: "Superhero Cape", emoji: "🦸", cost: 280, description: "SAT-saving powers." },
+  { id: "tuxedo", slot: "outfit", label: "Tuxedo", emoji: "🤵", cost: 320, description: "Formal event ready." },
+  { id: "varsity_jacket", slot: "outfit", label: "Varsity Jacket", emoji: "🧥", cost: 200, description: "Team captain energy." },
+  { id: "pajamas", slot: "outfit", label: "Pajamas", emoji: "🛌", cost: 130, description: "Comfy study attire." },
 ];
 
 export const moodForEnergy = (energy: number): PetMood => {
