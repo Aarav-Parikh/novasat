@@ -221,8 +221,8 @@ const Pet = () => {
             <div
               role="img"
               aria-label={`Buddy looking ${mood}`}
-              className={`w-full h-full bg-no-repeat drop-shadow-[0_10px_40px_hsl(var(--primary)/0.35)] ${mood === "energetic" ? "animate-float" : ""}`}
-              style={{ backgroundImage: `url(${petStagesImg})`, backgroundSize: "300% 100%", backgroundPosition: moodPosition[mood] }}
+              className={`w-full h-full bg-no-repeat bg-center bg-contain drop-shadow-[0_10px_40px_hsl(var(--primary)/0.35)] ${mood === "energetic" ? "animate-float" : ""}`}
+              style={{ backgroundImage: `url(${moodImage[mood]})` }}
             />
             {/* Cosmetic chips overlay */}
             {equippedItems.length > 0 && (
