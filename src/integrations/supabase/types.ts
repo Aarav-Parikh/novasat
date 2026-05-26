@@ -397,6 +397,7 @@ export type Database = {
         Returns: Json
       }
       sync_pet_decay: { Args: never; Returns: Json }
+      wake_up_pet: { Args: { _score: number; _total: number }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"
