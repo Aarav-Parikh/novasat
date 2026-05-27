@@ -15,6 +15,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { generateQuestions } from "@/lib/generate-questions";
 import { Question } from "@/lib/novaprep-data";
+import { supabase } from "@/integrations/supabase/client";
 import petEnergeticImg from "@/assets/pet-energetic.png";
 import petTiredImg from "@/assets/pet-tired.png";
 import petAsleepImg from "@/assets/pet-asleep.png";
@@ -103,9 +104,39 @@ const Pet = () => {
   const equippedHat = profile?.equipped.hat;
   const equippedNeck = profile?.equipped.neck;
   const equippedOutfit = profile?.equipped.outfit;
-  const equippedItems = [equippedHat, equippedNeck, equippedOutfit]
-    .map((id) => (id ? COSMETIC_CATALOG.find((c) => c.id === id) : null))
-    .filter(Boolean);
+
+  // Ask the backend to render Buddy with whatever cosmetics are equipped.
+  // Cached server-side per (mood, hat, neck, outfit) combo so it loads instantly on repeat.
+  const [renderedUrl, setRenderedUrl] = useState<string | null>(null);
+  const [rendering, setRendering] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    const anyEquipped = !!(equippedHat || equippedNeck || equippedOutfit);
+    if (!anyEquipped) {
+      setRenderedUrl(null);
+      setRendering(false);
+      return;
+    }
+    setRendering(true);
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("render-pet", {
+          body: { mood, hat: equippedHat, neck: equippedNeck, outfit: equippedOutfit },
+        });
+        if (cancelled) return;
+        if (error) throw error;
+        if (data?.url) setRenderedUrl(data.url);
+        else setRenderedUrl(null);
+      } catch (e) {
+        if (!cancelled) setRenderedUrl(null);
+      } finally {
+        if (!cancelled) setRendering(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mood, equippedHat, equippedNeck, equippedOutfit]);
 
   const ownedBySlot = useMemo(() => {
     const owned = profile?.cosmetics ?? [];
