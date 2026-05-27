@@ -15,6 +15,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { generateQuestions } from "@/lib/generate-questions";
 import { Question } from "@/lib/novaprep-data";
+import { supabase } from "@/integrations/supabase/client";
 import petEnergeticImg from "@/assets/pet-energetic.png";
 import petTiredImg from "@/assets/pet-tired.png";
 import petAsleepImg from "@/assets/pet-asleep.png";
@@ -103,9 +104,39 @@ const Pet = () => {
   const equippedHat = profile?.equipped.hat;
   const equippedNeck = profile?.equipped.neck;
   const equippedOutfit = profile?.equipped.outfit;
-  const equippedItems = [equippedHat, equippedNeck, equippedOutfit]
-    .map((id) => (id ? COSMETIC_CATALOG.find((c) => c.id === id) : null))
-    .filter(Boolean);
+
+  // Ask the backend to render Buddy with whatever cosmetics are equipped.
+  // Cached server-side per (mood, hat, neck, outfit) combo so it loads instantly on repeat.
+  const [renderedUrl, setRenderedUrl] = useState<string | null>(null);
+  const [rendering, setRendering] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    const anyEquipped = !!(equippedHat || equippedNeck || equippedOutfit);
+    if (!anyEquipped) {
+      setRenderedUrl(null);
+      setRendering(false);
+      return;
+    }
+    setRendering(true);
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("render-pet", {
+          body: { mood, hat: equippedHat, neck: equippedNeck, outfit: equippedOutfit },
+        });
+        if (cancelled) return;
+        if (error) throw error;
+        if (data?.url) setRenderedUrl(data.url);
+        else setRenderedUrl(null);
+      } catch (e) {
+        if (!cancelled) setRenderedUrl(null);
+      } finally {
+        if (!cancelled) setRendering(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mood, equippedHat, equippedNeck, equippedOutfit]);
 
   const ownedBySlot = useMemo(() => {
     const owned = profile?.cosmetics ?? [];
@@ -221,40 +252,16 @@ const Pet = () => {
             <div
               role="img"
               aria-label={`Buddy looking ${mood}`}
-              className={`w-full h-full bg-no-repeat bg-center bg-contain drop-shadow-[0_10px_40px_hsl(var(--primary)/0.35)] ${mood === "energetic" ? "animate-float" : ""}`}
-              style={{ backgroundImage: `url(${moodImage[mood]})` }}
+              className={`w-full h-full bg-no-repeat bg-center bg-contain drop-shadow-[0_10px_40px_hsl(var(--primary)/0.35)] transition-opacity duration-300 ${mood === "energetic" ? "animate-float" : ""} ${rendering ? "opacity-60" : "opacity-100"}`}
+              style={{ backgroundImage: `url(${renderedUrl ?? moodImage[mood]})` }}
             />
-            {/* Cosmetic overlays — positioned over the pet image. Hidden when asleep (curled pose). */}
-            {mood !== "asleep" && (
-              <>
-                {equippedHat && (
-                  <span
-                    className="absolute pointer-events-none select-none drop-shadow-lg"
-                    style={{ top: "12%", left: "50%", transform: "translateX(-50%) rotate(-6deg)", fontSize: "3.5rem", lineHeight: 1 }}
-                    title={COSMETIC_CATALOG.find((c) => c.id === equippedHat)?.label}
-                  >
-                    {COSMETIC_CATALOG.find((c) => c.id === equippedHat)?.emoji}
-                  </span>
-                )}
-                {equippedNeck && (
-                  <span
-                    className="absolute pointer-events-none select-none drop-shadow-lg"
-                    style={{ top: "52%", left: "50%", transform: "translateX(-50%)", fontSize: "2.25rem", lineHeight: 1 }}
-                    title={COSMETIC_CATALOG.find((c) => c.id === equippedNeck)?.label}
-                  >
-                    {COSMETIC_CATALOG.find((c) => c.id === equippedNeck)?.emoji}
-                  </span>
-                )}
-                {equippedOutfit && (
-                  <span
-                    className="absolute pointer-events-none select-none drop-shadow-lg"
-                    style={{ top: "68%", left: "50%", transform: "translateX(-50%)", fontSize: "3rem", lineHeight: 1, opacity: 0.92 }}
-                    title={COSMETIC_CATALOG.find((c) => c.id === equippedOutfit)?.label}
-                  >
-                    {COSMETIC_CATALOG.find((c) => c.id === equippedOutfit)?.emoji}
-                  </span>
-                )}
-              </>
+            {rendering && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="rounded-full bg-background/70 backdrop-blur px-3 py-1.5 text-xs font-mono text-muted-foreground inline-flex items-center gap-2">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Dressing Buddy…
+                </div>
+              </div>
             )}
           </div>
 

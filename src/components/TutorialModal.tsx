@@ -16,8 +16,8 @@ const slides = [
     body: "Practice runs adaptive drills and full simulations. Daily Plan turns your weak topics into a checklist. Tasks get struck through as you finish them.",
   },
   {
-    title: "Boxes, Store & Rewards",
-    body: "Earn mystery Boxes by gaining XP. Spend SP in the Store. Active boosts (max 3) live in the bar at the top of every page.",
+    title: "Store & Companion",
+    body: "Earn StudyPoints (SP) from drills and tests. Spend them in the Store on cosmetics for Buddy, your study companion.",
   },
   {
     title: "AI Coach + Weak Areas",
