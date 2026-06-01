@@ -18,12 +18,14 @@ const showFallback = (title?: string, message?: string) => {
   if (rootElement) rootElement.innerHTML = fallbackHtml(title, message);
 };
 
+let bootComplete = false;
+
 window.addEventListener("error", () => {
-  showFallback("Something went wrong", "Reload to start NovaSAT again.");
+  if (!bootComplete) showFallback("Something went wrong", "Reload to start NovaSAT again.");
 });
 
 window.addEventListener("unhandledrejection", () => {
-  showFallback("Connection hiccup", "Reload to reconnect and continue.");
+  if (!bootComplete) showFallback("Connection hiccup", "Reload to reconnect and continue.");
 });
 
 if (!rootElement) {
@@ -35,6 +37,7 @@ if (!rootElement) {
     .then(({ createRoot }) => import("./App.tsx").then(({ default: App }) => ({ createRoot, App })))
     .then(({ createRoot, App }) => {
       createRoot(rootElement).render(<App />);
+      bootComplete = true;
     })
     .catch((error) => {
       console.error("NovaSAT boot failed:", error);
