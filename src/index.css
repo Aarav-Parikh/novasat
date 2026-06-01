@@ -111,6 +111,19 @@
     @apply min-h-screen;
   }
 
+  #root:empty::before {
+    content: "NovaSAT is taking longer than expected. Please reload the app.";
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    color: hsl(var(--foreground));
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.875rem;
+    text-align: center;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
