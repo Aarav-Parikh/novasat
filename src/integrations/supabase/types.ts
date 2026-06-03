@@ -360,6 +360,7 @@ export type Database = {
         Returns: {
           created_at: string
           display_name: string
+          email: string
           focus_minutes_total: number
           last_login_at: string
           login_count: number
