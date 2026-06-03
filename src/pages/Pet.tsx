@@ -11,6 +11,7 @@ import {
   COSMETIC_CATALOG,
   CosmeticSlot,
   PetMood,
+  formatBuff,
 } from "@/lib/novaprep-store";
 import { toast } from "@/hooks/use-toast";
 import { generateQuestions } from "@/lib/generate-questions";
