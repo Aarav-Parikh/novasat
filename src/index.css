@@ -209,14 +209,10 @@
   .starfield::before {
     content: "";
     position: absolute;
-    inset: -20%;
-    background:
-      radial-gradient(ellipse 40% 30% at 20% 30%, hsl(280 80% 55% / 0.18), transparent 70%),
-      radial-gradient(ellipse 35% 25% at 80% 70%, hsl(195 90% 55% / 0.16), transparent 70%),
-      radial-gradient(ellipse 30% 20% at 60% 20%, hsl(14 90% 60% / 0.14), transparent 70%);
-    filter: blur(60px);
-    animation: auroraDrift 22s ease-in-out infinite alternate;
+    inset: 0;
+    background: transparent;
   }
+
   .starfield::after {
     content: "";
     position: absolute;
