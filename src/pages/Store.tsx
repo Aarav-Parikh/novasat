@@ -182,7 +182,19 @@ const Store = () => {
                         {item.emoji}
                       </div>
                     </div>
-                    <div className="mt-5 flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2 text-sm">
+                    {formatBuff(item.buff).length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-1.5">
+                        {formatBuff(item.buff).map((b) => (
+                          <span
+                            key={b}
+                            className="inline-flex items-center gap-1 rounded-full border border-success/40 bg-success/10 px-2.5 py-1 text-[11px] font-semibold text-success"
+                          >
+                            <Zap className="h-3 w-3" /> {b}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-4 flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2 text-sm">
                       <span className="inline-flex items-center gap-2 text-muted-foreground">
                         <Gem className="h-4 w-4 text-secondary" /> Price
                       </span>
