@@ -25,6 +25,7 @@ interface GlobalStats {
 interface UserRow {
   user_id: string;
   display_name: string | null;
+  email: string | null;
   xp: number;
   streak: number;
   focus_minutes_total: number;
@@ -32,6 +33,7 @@ interface UserRow {
   last_login_at: string | null;
   created_at: string;
 }
+
 
 const fmtDate = (s: string | null) => (s ? new Date(s).toLocaleDateString() : "—");
 
