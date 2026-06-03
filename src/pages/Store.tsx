@@ -1,4 +1,4 @@
-import { Gem, ShoppingBag, Coins, CircleCheck as CheckCircle2, PawPrint } from "lucide-react";
+import { Gem, ShoppingBag, Coins, CircleCheck as CheckCircle2, PawPrint, Zap } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { GlassCard } from "@/components/GlassCard";
 import {
@@ -6,6 +6,7 @@ import {
   COSMETIC_CATALOG,
   CosmeticItem,
   CosmeticSlot,
+  formatBuff,
 } from "@/lib/novaprep-store";
 import { toast } from "@/hooks/use-toast";
 
