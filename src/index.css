@@ -47,13 +47,9 @@
     --radius: 0.875rem;
 
     --gradient-nebula: linear-gradient(135deg, hsl(14 90% 60% / 0.95), hsl(24 95% 58% / 0.85));
-    --gradient-cosmic:
-      radial-gradient(ellipse 80% 60% at 15% 10%, hsl(280 70% 45% / 0.35), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 90% 20%, hsl(195 90% 50% / 0.28), transparent 60%),
-      radial-gradient(ellipse 90% 70% at 80% 95%, hsl(14 90% 55% / 0.30), transparent 65%),
-      radial-gradient(ellipse 60% 50% at 10% 90%, hsl(330 75% 55% / 0.22), transparent 60%),
-      linear-gradient(180deg, hsl(220 55% 6%) 0%, hsl(230 55% 9%) 50%, hsl(220 50% 7%) 100%);
+    --gradient-cosmic: none;
     --gradient-glass: linear-gradient(135deg, hsl(220 45% 13% / 0.65), hsl(220 50% 8% / 0.45));
+
 
     --glow-purple: 0 0 30px hsl(14 90% 60% / 0.5), 0 0 60px hsl(14 90% 60% / 0.25);
     --glow-cyan: 0 0 30px hsl(24 95% 58% / 0.5), 0 0 60px hsl(24 95% 58% / 0.25);
@@ -213,14 +209,10 @@
   .starfield::before {
     content: "";
     position: absolute;
-    inset: -20%;
-    background:
-      radial-gradient(ellipse 40% 30% at 20% 30%, hsl(280 80% 55% / 0.18), transparent 70%),
-      radial-gradient(ellipse 35% 25% at 80% 70%, hsl(195 90% 55% / 0.16), transparent 70%),
-      radial-gradient(ellipse 30% 20% at 60% 20%, hsl(14 90% 60% / 0.14), transparent 70%);
-    filter: blur(60px);
-    animation: auroraDrift 22s ease-in-out infinite alternate;
+    inset: 0;
+    background: transparent;
   }
+
   .starfield::after {
     content: "";
     position: absolute;
