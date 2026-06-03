@@ -11,6 +11,7 @@ import {
   COSMETIC_CATALOG,
   CosmeticSlot,
   PetMood,
+  formatBuff,
 } from "@/lib/novaprep-store";
 import { toast } from "@/hooks/use-toast";
 import { generateQuestions } from "@/lib/generate-questions";
@@ -371,6 +372,15 @@ const Pet = () => {
                             <div className="text-[11px] text-muted-foreground">
                               {equipped ? "Equipped · tap to remove" : "Tap to equip"}
                             </div>
+                            {formatBuff(item.buff).length > 0 && (
+                              <div className="mt-1.5 flex flex-wrap gap-1">
+                                {formatBuff(item.buff).map((b) => (
+                                  <span key={b} className="rounded-full border border-success/40 bg-success/10 px-1.5 py-0.5 text-[10px] font-semibold text-success">
+                                    {b}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </button>
                       );
