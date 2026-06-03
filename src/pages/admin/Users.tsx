@@ -88,6 +88,7 @@ const AdminUsers = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>XP</TableHead>
                 <TableHead>Streak</TableHead>
                 <TableHead>Logins</TableHead>
@@ -98,8 +99,10 @@ const AdminUsers = () => {
             <TableBody>
               {users.map((u) => (
                 <TableRow key={u.user_id}>
-                  <TableCell className="font-medium">{u.display_name || "—"}</TableCell>
+                  <TableCell className="font-medium">{u.display_name || u.email?.split("@")[0] || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
                   <TableCell>{u.xp.toLocaleString()}</TableCell>
+
                   <TableCell>{u.streak}</TableCell>
                   <TableCell>{u.login_count}</TableCell>
                   <TableCell className="text-muted-foreground">{fmtDate(u.last_login_at)}</TableCell>
