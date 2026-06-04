@@ -8,15 +8,15 @@
 
 @layer base {
   :root {
-    /* Midnight blue base */
-    --background: 220 50% 8%;
-    --foreground: 210 20% 95%;
+    /* Midnight blue base — lighter */
+    --background: 218 48% 18%;
+    --foreground: 210 25% 97%;
 
-    --card: 220 45% 11%;
-    --card-foreground: 210 20% 95%;
+    --card: 218 42% 22%;
+    --card-foreground: 210 25% 97%;
 
-    --popover: 220 48% 9%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 218 45% 19%;
+    --popover-foreground: 210 25% 97%;
 
     /* Coral primary */
     --primary: 14 90% 60%;
