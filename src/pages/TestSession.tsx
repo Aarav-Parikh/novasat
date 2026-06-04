@@ -310,7 +310,7 @@ const TestSession = () => {
     try {
       stampTime();
       const result = await gradeCurrentModule();
-      if (m === "full" && module === 1) {
+      if (isFullLike && module === 1) {
         const harder = result.correct / Math.max(1, questions.length) >= 0.6;
         setCompleted({ correct: result.correct, total: questions.length, seconds: sessionTimeRef.current, xp: result.gained });
         setModuleOneSnapshot({ questions: [...questions], answers: { ...answers } });
@@ -425,8 +425,8 @@ const TestSession = () => {
     const math = (answerKey?.questions ?? []).filter((qq) => qq.section === "Math");
     const mathAns = answerKey?.answers ?? {};
     // For non-full modes, just sort current snapshot into the right tab
-    const allQ = m === "full" ? [...ela, ...(answerKey?.questions ?? [])] : (answerKey?.questions ?? []);
-    const allAns = m === "full" ? { ...elaAns, ...mathAns } : (answerKey?.answers ?? {});
+    const allQ = isFullLike ? [...ela, ...(answerKey?.questions ?? [])] : (answerKey?.questions ?? []);
+    const allAns = isFullLike ? { ...elaAns, ...mathAns } : (answerKey?.answers ?? {});
     const elaList = allQ.filter((qq) => qq.section === "Reading & Writing");
     const mathList = allQ.filter((qq) => qq.section === "Math");
 
@@ -490,7 +490,7 @@ const TestSession = () => {
             </p>
             <div className="mt-3 text-xs text-secondary">+{xpEarned} XP · Mistakes routed to your Vault</div>
 
-            {m === "full" && (
+            {isFullLike && (
               <div className="mt-6 grid sm:grid-cols-3 gap-3 text-left">
                 <div className="rounded-lg border border-secondary/30 bg-secondary/5 p-4">
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Reading & Writing</div>
@@ -555,7 +555,7 @@ const TestSession = () => {
   if (!q) return null;
   const answered = answers[q.id] !== undefined && String(answers[q.id]).trim() !== "";
   const answeredCount = questions.filter((qq) => answers[qq.id] !== undefined && String(answers[qq.id]).trim() !== "").length;
-  const moduleAction = m === "full" && module === 1 ? "Submit ELA Module" : m === "full" ? "Submit Test" : "Submit Drill";
+  const moduleAction = isFullLike && module === 1 ? "Submit ELA Module" : isFullLike ? "Submit Test" : "Submit Drill";
 
   if (reviewing) {
     return (
@@ -603,7 +603,7 @@ const TestSession = () => {
           <div className="max-w-3xl mx-auto px-5 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-[10px] uppercase tracking-[0.2em] text-secondary">{exerciseName}</div>
-              {m === "full" && <span className="text-xs px-2 py-0.5 rounded bg-muted border border-border font-mono">{module === 1 ? "ELA" : "Math"}</span>}
+              {isFullLike && <span className="text-xs px-2 py-0.5 rounded bg-muted border border-border font-mono">{module === 1 ? "ELA" : "Math"}</span>}
             </div>
             <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground">
               <span ref={timerDisplayRef} className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {fmtTime(Math.max(0, currentLimit - sessionTime))}</span>
