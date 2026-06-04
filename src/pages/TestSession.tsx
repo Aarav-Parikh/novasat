@@ -154,12 +154,13 @@ const TestSession = () => {
       } else {
         const fullSection = targetModule === 1 ? "Reading & Writing" : "Math";
         const modeSection = m === "math" ? "Math" : m === "reading" ? "Reading & Writing" : undefined;
-        const requestedSection = m === "full" ? fullSection : modeSection;
+        const requestedSection = isFullLike ? fullSection : modeSection;
         const modeTopic = requestedTopic && requestedTopic !== "Mixed SAT Skills" ? requestedTopic : undefined;
         // Request extra questions to account for potential section mismatches
-        const requestCount = m === "full" ? (targetModule === 1 ? 54 : 44) : MODULE_SIZE[m];
+        const requestCount = isFullLike ? (targetModule === 1 ? fullCounts.m1 : fullCounts.m2) : MODULE_SIZE[m];
+        const generatorMode = m === "review" ? "redemption" : m === "shortfull" ? "full" : m;
         const qs = await generateQuestions({
-          mode: m === "review" ? "redemption" : m,
+          mode: generatorMode,
           count: requestCount,
           difficultyBias: bias,
           topic: m === "redemption" ? weakTopic : modeTopic,
@@ -169,7 +170,7 @@ const TestSession = () => {
         const filtered = requestedSection
           ? qs.filter((q) => q.section === requestedSection)
           : qs;
-        const targetCount = m === "full" ? (targetModule === 1 ? 54 : 44) : MODULE_SIZE[m];
+        const targetCount = isFullLike ? (targetModule === 1 ? fullCounts.m1 : fullCounts.m2) : MODULE_SIZE[m];
         setQuestions(prepareQuestions(filtered.slice(0, targetCount)));
       }
     } catch (e: any) {
