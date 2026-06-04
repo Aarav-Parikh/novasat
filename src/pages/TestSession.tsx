@@ -97,9 +97,13 @@ const TestSession = () => {
   const [answerKey, setAnswerKey] = useState<{ questions: Question[]; answers: Record<string, AnswerValue> } | null>(null);
   const [moduleOneSnapshot, setModuleOneSnapshot] = useState<{ questions: Question[]; answers: Record<string, AnswerValue> } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const currentLimit = m === "full" ? (module === 1 ? 64 * 60 : 70 * 60) : MODULE_LIMIT[m];
+  const isFullLike = m === "full" || m === "shortfull";
+  const fullLimits = m === "shortfull" ? { m1: 22 * 60, m2: 28 * 60 } : { m1: 64 * 60, m2: 70 * 60 };
+  const fullCounts = m === "shortfull" ? { m1: 20, m2: 16 } : { m1: 54, m2: 44 };
+  const currentLimit = isFullLike ? (module === 1 ? fullLimits.m1 : fullLimits.m2) : MODULE_LIMIT[m];
   const exerciseName =
     m === "full" ? "Full SAT Simulation" :
+    m === "shortfull" ? "Short SAT Simulation" :
     m === "reading" ? "Reading & Writing drill" :
     m === "math" ? "Math drill" :
     m === "redemption" ? "Weak-area redemption drill" :
