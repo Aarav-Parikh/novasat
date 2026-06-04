@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type Mode = "full" | "reading" | "math" | "redemption" | "review";
+type Mode = "full" | "shortfull" | "reading" | "math" | "redemption" | "review";
 type AnswerValue = number | string;
 
 function fmtTime(s: number) {
