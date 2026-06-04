@@ -51,6 +51,15 @@ const Practice = () => {
       highlight: true,
     },
     {
+      id: "shortfull",
+      icon: Zap,
+      title: "Short SAT Simulation",
+      desc: "Quick 36-question SAT mock: 20 Reading & Writing, then 16 Math. Same structure as the full test, half the time.",
+      cta: "Start Short Sim",
+      duration: "50 min",
+      route: "/test/shortfull",
+    },
+    {
       id: "rw-drill",
       icon: BookOpen,
       title: "Reading & Writing Drill",

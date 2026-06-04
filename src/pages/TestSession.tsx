@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type Mode = "full" | "reading" | "math" | "redemption" | "review";
+type Mode = "full" | "shortfull" | "reading" | "math" | "redemption" | "review";
 type AnswerValue = number | string;
 
 function fmtTime(s: number) {
@@ -28,8 +28,8 @@ function fmtTime(s: number) {
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
 
-const MODULE_SIZE: Record<Mode, number> = { full: 54, reading: 27, math: 44, redemption: 12, review: 10 };
-const MODULE_LIMIT: Record<Mode, number> = { full: 64 * 60, reading: 32 * 60, math: 70 * 60, redemption: 18 * 60, review: 15 * 60 };
+const MODULE_SIZE: Record<Mode, number> = { full: 54, shortfull: 20, reading: 27, math: 44, redemption: 12, review: 10 };
+const MODULE_LIMIT: Record<Mode, number> = { full: 64 * 60, shortfull: 22 * 60, reading: 32 * 60, math: 70 * 60, redemption: 18 * 60, review: 15 * 60 };
 const BREAK_KEY = "novaprep:sat-break-endsAt";
 const BREAK_SECONDS = 10 * 60;
 
@@ -97,9 +97,13 @@ const TestSession = () => {
   const [answerKey, setAnswerKey] = useState<{ questions: Question[]; answers: Record<string, AnswerValue> } | null>(null);
   const [moduleOneSnapshot, setModuleOneSnapshot] = useState<{ questions: Question[]; answers: Record<string, AnswerValue> } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const currentLimit = m === "full" ? (module === 1 ? 64 * 60 : 70 * 60) : MODULE_LIMIT[m];
+  const isFullLike = m === "full" || m === "shortfull";
+  const fullLimits = m === "shortfull" ? { m1: 22 * 60, m2: 28 * 60 } : { m1: 64 * 60, m2: 70 * 60 };
+  const fullCounts = m === "shortfull" ? { m1: 20, m2: 16 } : { m1: 54, m2: 44 };
+  const currentLimit = isFullLike ? (module === 1 ? fullLimits.m1 : fullLimits.m2) : MODULE_LIMIT[m];
   const exerciseName =
     m === "full" ? "Full SAT Simulation" :
+    m === "shortfull" ? "Short SAT Simulation" :
     m === "reading" ? "Reading & Writing drill" :
     m === "math" ? "Math drill" :
     m === "redemption" ? "Weak-area redemption drill" :
@@ -150,12 +154,13 @@ const TestSession = () => {
       } else {
         const fullSection = targetModule === 1 ? "Reading & Writing" : "Math";
         const modeSection = m === "math" ? "Math" : m === "reading" ? "Reading & Writing" : undefined;
-        const requestedSection = m === "full" ? fullSection : modeSection;
+        const requestedSection = isFullLike ? fullSection : modeSection;
         const modeTopic = requestedTopic && requestedTopic !== "Mixed SAT Skills" ? requestedTopic : undefined;
         // Request extra questions to account for potential section mismatches
-        const requestCount = m === "full" ? (targetModule === 1 ? 54 : 44) : MODULE_SIZE[m];
+        const requestCount = isFullLike ? (targetModule === 1 ? fullCounts.m1 : fullCounts.m2) : MODULE_SIZE[m];
+        const generatorMode = m === "review" ? "redemption" : m === "shortfull" ? "full" : m;
         const qs = await generateQuestions({
-          mode: m === "review" ? "redemption" : m,
+          mode: generatorMode,
           count: requestCount,
           difficultyBias: bias,
           topic: m === "redemption" ? weakTopic : modeTopic,
@@ -165,7 +170,7 @@ const TestSession = () => {
         const filtered = requestedSection
           ? qs.filter((q) => q.section === requestedSection)
           : qs;
-        const targetCount = m === "full" ? (targetModule === 1 ? 54 : 44) : MODULE_SIZE[m];
+        const targetCount = isFullLike ? (targetModule === 1 ? fullCounts.m1 : fullCounts.m2) : MODULE_SIZE[m];
         setQuestions(prepareQuestions(filtered.slice(0, targetCount)));
       }
     } catch (e: any) {
@@ -305,7 +310,7 @@ const TestSession = () => {
     try {
       stampTime();
       const result = await gradeCurrentModule();
-      if (m === "full" && module === 1) {
+      if (isFullLike && module === 1) {
         const harder = result.correct / Math.max(1, questions.length) >= 0.6;
         setCompleted({ correct: result.correct, total: questions.length, seconds: sessionTimeRef.current, xp: result.gained });
         setModuleOneSnapshot({ questions: [...questions], answers: { ...answers } });
@@ -420,8 +425,8 @@ const TestSession = () => {
     const math = (answerKey?.questions ?? []).filter((qq) => qq.section === "Math");
     const mathAns = answerKey?.answers ?? {};
     // For non-full modes, just sort current snapshot into the right tab
-    const allQ = m === "full" ? [...ela, ...(answerKey?.questions ?? [])] : (answerKey?.questions ?? []);
-    const allAns = m === "full" ? { ...elaAns, ...mathAns } : (answerKey?.answers ?? {});
+    const allQ = isFullLike ? [...ela, ...(answerKey?.questions ?? [])] : (answerKey?.questions ?? []);
+    const allAns = isFullLike ? { ...elaAns, ...mathAns } : (answerKey?.answers ?? {});
     const elaList = allQ.filter((qq) => qq.section === "Reading & Writing");
     const mathList = allQ.filter((qq) => qq.section === "Math");
 
@@ -485,7 +490,7 @@ const TestSession = () => {
             </p>
             <div className="mt-3 text-xs text-secondary">+{xpEarned} XP · Mistakes routed to your Vault</div>
 
-            {m === "full" && (
+            {isFullLike && (
               <div className="mt-6 grid sm:grid-cols-3 gap-3 text-left">
                 <div className="rounded-lg border border-secondary/30 bg-secondary/5 p-4">
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Reading & Writing</div>
@@ -550,7 +555,7 @@ const TestSession = () => {
   if (!q) return null;
   const answered = answers[q.id] !== undefined && String(answers[q.id]).trim() !== "";
   const answeredCount = questions.filter((qq) => answers[qq.id] !== undefined && String(answers[qq.id]).trim() !== "").length;
-  const moduleAction = m === "full" && module === 1 ? "Submit ELA Module" : m === "full" ? "Submit Test" : "Submit Drill";
+  const moduleAction = isFullLike && module === 1 ? "Submit ELA Module" : isFullLike ? "Submit Test" : "Submit Drill";
 
   if (reviewing) {
     return (
@@ -598,7 +603,7 @@ const TestSession = () => {
           <div className="max-w-3xl mx-auto px-5 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-[10px] uppercase tracking-[0.2em] text-secondary">{exerciseName}</div>
-              {m === "full" && <span className="text-xs px-2 py-0.5 rounded bg-muted border border-border font-mono">{module === 1 ? "ELA" : "Math"}</span>}
+              {isFullLike && <span className="text-xs px-2 py-0.5 rounded bg-muted border border-border font-mono">{module === 1 ? "ELA" : "Math"}</span>}
             </div>
             <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground">
               <span ref={timerDisplayRef} className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {fmtTime(Math.max(0, currentLimit - sessionTime))}</span>

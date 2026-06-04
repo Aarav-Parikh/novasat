@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TutorialModal } from "./TutorialModal";
 import { ReviewPromptModal } from "./ReviewPromptModal";
 
-const REVIEW_AFTER_LOGIN_COUNT = 3;
+const REVIEW_AFTER_LOGIN_COUNT = 2;
 
 /**
  * Tracks logins and decides whether to show the first-time tutorial or a
