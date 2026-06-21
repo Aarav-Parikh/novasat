@@ -10,6 +10,7 @@ import { DataBootstrap } from "@/components/DataBootstrap";
 import { OnboardingGate } from "@/components/OnboardingGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index.tsx";
+import Landing from "./pages/Landing.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Practice from "./pages/Practice.tsx";
 import DailyPlan from "./pages/DailyPlan.tsx";
@@ -39,8 +40,9 @@ const App = () => (
             <DataBootstrap />
             <OnboardingGate />
             <Routes>
+              <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
+              <Route path="/app" element={<RequireAuth><Index /></RequireAuth>} />
               <Route path="/practice" element={<RequireAuth><Practice /></RequireAuth>} />
               <Route path="/plan" element={<RequireAuth><DailyPlan /></RequireAuth>} />
               <Route path="/articles" element={<RequireAuth><Articles /></RequireAuth>} />
