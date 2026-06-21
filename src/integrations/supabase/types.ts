@@ -387,6 +387,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_review_prompt_dismissed: { Args: never; Returns: undefined }
+      mark_tutorial_completed: { Args: never; Returns: undefined }
+      record_login_and_get_onboarding: { Args: never; Returns: Json }
       record_session_rewards: {
         Args: {
           _duration: number

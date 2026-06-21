@@ -32,7 +32,7 @@ const Auth = () => {
       localStorage.removeItem(GOOGLE_ERROR_KEY);
       toast({ title: "Google sign-in failed", description: googleError, variant: "destructive" });
     }
-    if (user) nav("/", { replace: true });
+    if (user) nav("/app", { replace: true });
   }, [user, nav]);
 
   const submit = async (e: React.FormEvent) => {
@@ -70,7 +70,7 @@ const Auth = () => {
           supabase.auth.signInWithPassword({ email, password }),
         );
         if (error) throw error;
-        if (data.session) nav("/", { replace: true });
+        if (data.session) nav("/app", { replace: true });
       }
     } catch (err: any) {
       toast({
@@ -182,7 +182,7 @@ const Auth = () => {
               if (result.redirected) return;
               const { data } = await supabase.auth.getSession();
               if (data.session) {
-                nav("/", { replace: true });
+                nav("/app", { replace: true });
                 return;
               }
               localStorage.removeItem(GOOGLE_PENDING_KEY);

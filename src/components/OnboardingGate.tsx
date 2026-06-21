@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { TutorialModal } from "./TutorialModal";
 import { ReviewPromptModal } from "./ReviewPromptModal";
 
-const REVIEW_AFTER_LOGIN_COUNT = 2;
-
 /**
- * Tracks logins and decides whether to show the first-time tutorial or a
- * review prompt. Runs once per session.
+ * Tracks logins via a server RPC (column-level UPDATEs on profiles are revoked
+ * from the client). Shows the tutorial on first login and the review prompt
+ * on the next login afterwards.
  */
 export function OnboardingGate() {
   const { user } = useAuth();
@@ -22,64 +21,41 @@ export function OnboardingGate() {
     sessionStorage.setItem(sessionKey, "1");
 
     (async () => {
-      // Fetch profile state
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("login_count, tutorial_completed, review_prompt_dismissed")
-        .eq("id", user.id)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("record_login_and_get_onboarding");
+      if (error || !data || typeof data !== "object") return;
+      const state = data as {
+        ok?: boolean;
+        login_count?: number;
+        tutorial_completed?: boolean;
+        review_prompt_dismissed?: boolean;
+        has_review?: boolean;
+      };
+      if (!state.ok) return;
 
-      if (!profile) return;
-
-      const newLoginCount = (profile.login_count ?? 0) + 1;
-
-      // Bump login count + last login timestamp
-      await supabase
-        .from("profiles")
-        .update({
-          login_count: newLoginCount,
-          last_login_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
-
-      // First time → show tutorial
-      if (!profile.tutorial_completed) {
+      // First login → tutorial
+      if (!state.tutorial_completed) {
         setShowTutorial(true);
         return;
       }
 
-      // From the 3rd login onward, prompt for a review until they submit/dismiss
-      if (
-        newLoginCount >= REVIEW_AFTER_LOGIN_COUNT &&
-        !profile.review_prompt_dismissed
-      ) {
-        // Don't double-prompt if a review already exists
-        const { data: existing } = await supabase
-          .from("reviews")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (!existing) setShowReview(true);
-        else
-          await supabase
-            .from("profiles")
-            .update({ review_prompt_dismissed: true })
-            .eq("id", user.id);
+      // Tutorial already done → prompt for a review (unless already given/dismissed)
+      if (!state.review_prompt_dismissed && !state.has_review) {
+        setShowReview(true);
       }
     })();
   }, [user]);
 
   const closeTutorial = async () => {
     setShowTutorial(false);
-    if (user) {
-      await supabase
-        .from("profiles")
-        .update({ tutorial_completed: true })
-        .eq("id", user.id);
-    }
+    await supabase.rpc("mark_tutorial_completed");
+  };
+
+  const closeReview = async () => {
+    setShowReview(false);
+    await supabase.rpc("mark_review_prompt_dismissed");
   };
 
   if (showTutorial) return <TutorialModal onClose={closeTutorial} />;
-  if (showReview) return <ReviewPromptModal onClose={() => setShowReview(false)} />;
+  if (showReview) return <ReviewPromptModal onClose={closeReview} />;
   return null;
 }

@@ -25,21 +25,13 @@ export function ReviewPromptModal({ onClose }: { onClose: (dismissed: boolean) =
       setBusy(false);
       return;
     }
-    await supabase
-      .from("profiles")
-      .update({ review_prompt_dismissed: true })
-      .eq("id", user.id);
+    await supabase.rpc("mark_review_prompt_dismissed");
     toast({ title: "Thank you!", description: "Your feedback launched successfully." });
     onClose(true);
   };
 
   const dismiss = async () => {
-    if (user) {
-      await supabase
-        .from("profiles")
-        .update({ review_prompt_dismissed: true })
-        .eq("id", user.id);
-    }
+    await supabase.rpc("mark_review_prompt_dismissed");
     onClose(true);
   };
 

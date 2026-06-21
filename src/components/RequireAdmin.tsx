@@ -11,6 +11,6 @@ export function RequireAdmin({ children }: { children: JSX.Element }) {
       </div>
     );
   }
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdmin) return <Navigate to="/app" replace />;
   return children;
 }

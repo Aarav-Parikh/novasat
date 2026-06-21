@@ -22,7 +22,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const items = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/app", label: "Dashboard", icon: LayoutDashboard },
   { to: "/practice", label: "Practice", icon: Target },
   { to: "/plan", label: "Daily Plan", icon: CalendarDays },
   { to: "/articles", label: "Articles", icon: BookOpen },
@@ -71,7 +71,7 @@ export function AppSidebar() {
           <NavLink
             key={it.to}
             to={it.to}
-            end={it.to === "/"}
+            end={it.to === "/app"}
             className={({ isActive }) =>
               [
                 "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",

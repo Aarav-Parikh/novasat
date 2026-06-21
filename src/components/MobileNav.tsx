@@ -23,7 +23,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 
 const items = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/app", label: "Dashboard", icon: LayoutDashboard },
   { to: "/practice", label: "Practice", icon: Target },
   { to: "/plan", label: "Daily Plan", icon: CalendarDays },
   { to: "/articles", label: "Articles", icon: BookOpen },
@@ -82,7 +82,7 @@ export function MobileNav() {
                 <NavLink
                   key={it.to}
                   to={it.to}
-                  end={it.to === "/"}
+                  end={it.to === "/app"}
                   onClick={() => setOpen(false)}
                   className={({ isActive }) =>
                     [
