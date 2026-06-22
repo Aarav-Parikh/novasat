@@ -297,10 +297,12 @@ const TestSession = () => {
   };
 
   const persistAnnotations = async (sessionId: string | null, qSet: Question[]) => {
+    const mergedFlags = { ...m1FlagDetails, ...flagDetails };
+    const mergedElims = { ...m1Eliminations, ...eliminations };
     const rows = qSet
       .map((qq) => {
-        const fd = flagDetails[qq.id];
-        const elim = eliminations[qq.id];
+        const fd = mergedFlags[qq.id];
+        const elim = mergedElims[qq.id];
         if (!fd && !elim) return null;
         return {
           user_id: profile?.id,
