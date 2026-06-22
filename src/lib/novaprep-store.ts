@@ -180,7 +180,7 @@ interface NovaState {
     total: number;
     duration: number;
     xpEarned: number;
-  }) => Promise<{ treatsAwarded: number; spAwarded: number } | void>;
+  }) => Promise<{ treatsAwarded: number; spAwarded: number; sessionId: string | null } | void>;
   resolveMistake: (id: string) => Promise<void>;
   claimDailySP: (amount: number) => Promise<boolean>;
   // Pet
@@ -558,7 +558,7 @@ export const useNova = create<NovaState>((set, get) => ({
       profile: freshProfile ? normalizeProfile(freshProfile) ?? state.profile : state.profile,
     }));
 
-    return { treatsAwarded, spAwarded };
+    return { treatsAwarded, spAwarded, sessionId: payload.session_id ?? null };
   },
 
   resolveMistake: async (id) => {
