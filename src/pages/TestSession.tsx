@@ -364,7 +364,7 @@ const TestSession = () => {
         duration: sessionTimeRef.current + completed.seconds,
         xpEarned: sessionXpEarned,
       });
-      const sessionId = (res as any)?.session_id ?? null;
+      const sessionId = (res as any)?.sessionId ?? null;
       // Persist annotations for both modules if full
       await persistAnnotations(sessionId, allQ);
       await bumpPacingUsesIfNeeded();
