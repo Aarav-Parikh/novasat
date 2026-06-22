@@ -294,18 +294,80 @@ const TestSession = () => {
     return { correct, gained };
   };
 
+  const persistAnnotations = async (sessionId: string | null, qSet: Question[]) => {
+    const rows = qSet
+      .map((qq) => {
+        const fd = flagDetails[qq.id];
+        const elim = eliminations[qq.id];
+        if (!fd && !elim) return null;
+        return {
+          user_id: profile?.id,
+          session_id: sessionId,
+          question_id: qq.id,
+          question_prompt: qq.prompt.slice(0, 500),
+          topic: qq.topic,
+          section: qq.section,
+          flag_category: fd?.category ?? null,
+          flag_note: fd?.note ?? null,
+          eliminations: elim ?? {},
+        };
+      })
+      .filter(Boolean);
+    if (!rows.length || !profile?.id) return;
+    try {
+      await supabase.from("question_annotations").insert(rows as any);
+    } catch (e) { console.error("annotation save failed", e); }
+  };
+
+  const bumpPacingUsesIfNeeded = async () => {
+    if (!showPacingCues) return;
+    try { await supabase.rpc("increment_pacing_uses" as any); } catch {}
+  };
+
+  const buildMissedList = (qSet: Question[], aSet: Record<string, AnswerValue>): MissedQuestion[] =>
+    qSet.filter((qq) => !isCorrectAnswer(qq, aSet[qq.id])).map((qq) => {
+      const ans = aSet[qq.id];
+      const userText = qq.responseType === "spr"
+        ? (ans !== undefined ? String(ans) : "—")
+        : (typeof ans === "number" ? `${String.fromCharCode(65 + ans)}. ${qq.choices[ans]}` : "—");
+      const correctText = qq.responseType === "spr"
+        ? (qq.correctText ?? qq.choices[qq.correct])
+        : `${String.fromCharCode(65 + qq.correct)}. ${qq.choices[qq.correct]}`;
+      return {
+        question_id: qq.id,
+        section: qq.section,
+        topic: qq.topic,
+        prompt: qq.prompt,
+        user_answer: userText,
+        correct_answer: correctText,
+        explanation: qq.explanation,
+        flag_category: flagDetails[qq.id]?.category ?? null,
+        eliminations: eliminations[qq.id] ? Object.fromEntries(Object.entries(eliminations[qq.id]).map(([k, v]) => [String.fromCharCode(65 + Number(k)), v])) : {},
+      };
+    });
+
   const finishSession = async (correct: number, total: number, sessionXpEarned: number) => {
     // Snapshot for the answer key BEFORE marking done so the UI can render it.
-    setAnswerKey({ questions: [...questions], answers: { ...answers } });
+    const finalQuestions = [...questions];
+    const finalAnswers = { ...answers };
+    setAnswerKey({ questions: finalQuestions, answers: finalAnswers });
     setDone(true);
+    // Compute combined missed list for the AI review dashboard.
+    const allQ = moduleOneSnapshot ? [...moduleOneSnapshot.questions, ...finalQuestions] : finalQuestions;
+    const allA = moduleOneSnapshot ? { ...moduleOneSnapshot.answers, ...finalAnswers } : finalAnswers;
+    setPostReviewMissed(buildMissedList(allQ, allA));
     try {
-      await recordSession({
+      const res = await recordSession({
         mode: m,
         score: correct + completed.correct,
         total: total + completed.total,
         duration: sessionTimeRef.current + completed.seconds,
         xpEarned: sessionXpEarned,
       });
+      const sessionId = (res as any)?.session_id ?? null;
+      // Persist annotations for both modules if full
+      await persistAnnotations(sessionId, allQ);
+      await bumpPacingUsesIfNeeded();
       if (taskLabel && dayLabel) await markTaskComplete({ taskKey: taskCompletionKey(dayLabel, taskLabel), taskLabel, dayLabel });
       // Re-sync profile from DB to ensure XP display is accurate everywhere
       await syncProfile();
