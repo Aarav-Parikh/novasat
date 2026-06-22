@@ -84,6 +84,14 @@ const TestSession = () => {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
+  const [flagDetails, setFlagDetails] = useState<Record<string, { category: FlagCategory; note?: string }>>({});
+  const [eliminations, setEliminations] = useState<Record<string, Record<number, string>>>({});
+  const [flagPickerOpen, setFlagPickerOpen] = useState(false);
+  const [elimPicker, setElimPicker] = useState<{ qid: string; choice: number } | null>(null);
+  const [postReviewMissed, setPostReviewMissed] = useState<MissedQuestion[] | null>(null);
+  const profile = useNova((s) => s.profile);
+  const adaptivePacingOn = profile?.adaptive_pacing_enabled !== false;
+  const showPacingCues = isFullLikeMode(m) && adaptivePacingOn && (profile?.full_sat_pacing_uses ?? 0) < 3;
   const [sessionTime, setSessionTime] = useState(0);
   const sessionTimeRef = useRef(0);
   const timerDisplayRef = useRef<HTMLSpanElement>(null);
