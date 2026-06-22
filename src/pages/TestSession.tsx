@@ -91,7 +91,7 @@ const TestSession = () => {
   const [postReviewMissed, setPostReviewMissed] = useState<MissedQuestion[] | null>(null);
   const profile = useNova((s) => s.profile);
   const adaptivePacingOn = profile?.adaptive_pacing_enabled !== false;
-  const showPacingCues = isFullLikeMode(m) && adaptivePacingOn && (profile?.full_sat_pacing_uses ?? 0) < 3;
+  const showPacingCues = (m === "full" || m === "shortfull") && adaptivePacingOn && (profile?.full_sat_pacing_uses ?? 0) < 3;
   const [sessionTime, setSessionTime] = useState(0);
   const sessionTimeRef = useRef(0);
   const timerDisplayRef = useRef<HTMLSpanElement>(null);
