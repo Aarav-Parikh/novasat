@@ -644,14 +644,18 @@ const TestSession = () => {
                 <p className="text-sm text-muted-foreground mt-1">Flagged questions are marked. Choose a number to revisit it, or proceed to turn it in.</p>
               </div>
             </div>
-            <div className="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-11 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2">
               {questions.map((qq, i) => {
                 const hasAnswer = answers[qq.id] !== undefined && String(answers[qq.id]).trim() !== "";
                 const isFlagged = flagged.has(qq.id);
+                const cat = flagDetails[qq.id]?.category;
                 return (
-                  <button key={qq.id} onClick={() => { setIdx(i); setReviewing(false); }} className={`relative h-11 rounded-lg border text-sm font-mono transition-colors ${hasAnswer ? "bg-primary/15 border-primary/40" : "bg-muted/20 border-border"}`}>
-                    {i + 1}
-                    {isFlagged && <Flag className="absolute -right-1 -top-1 h-3.5 w-3.5 text-warning fill-warning" />}
+                  <button key={qq.id} onClick={() => { setIdx(i); setReviewing(false); }} className={`relative min-h-[3.25rem] px-2 py-1.5 rounded-lg border text-sm font-mono transition-colors text-left ${hasAnswer ? "bg-primary/15 border-primary/40" : "bg-muted/20 border-border"}`}>
+                    <span>{i + 1}</span>
+                    {isFlagged && <Flag className="absolute right-1 top-1 h-3 w-3 text-warning fill-warning" />}
+                    {isFlagged && cat && (
+                      <div className="mt-1 text-[9px] leading-tight text-warning/90 truncate" title={cat}>{cat}</div>
+                    )}
                   </button>
                 );
               })}
