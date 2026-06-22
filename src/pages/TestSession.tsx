@@ -345,8 +345,11 @@ const TestSession = () => {
         user_answer: userText,
         correct_answer: correctText,
         explanation: qq.explanation,
-        flag_category: flagDetails[qq.id]?.category ?? null,
-        eliminations: eliminations[qq.id] ? Object.fromEntries(Object.entries(eliminations[qq.id]).map(([k, v]) => [String.fromCharCode(65 + Number(k)), v])) : {},
+        flag_category: (m1FlagDetails[qq.id] ?? flagDetails[qq.id])?.category ?? null,
+        eliminations: (() => {
+          const e = m1Eliminations[qq.id] ?? eliminations[qq.id];
+          return e ? Object.fromEntries(Object.entries(e).map(([k, v]) => [String.fromCharCode(65 + Number(k)), v])) : {};
+        })(),
       };
     });
 
