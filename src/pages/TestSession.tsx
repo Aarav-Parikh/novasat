@@ -388,6 +388,9 @@ const TestSession = () => {
         const harder = result.correct / Math.max(1, questions.length) >= 0.6;
         setCompleted({ correct: result.correct, total: questions.length, seconds: sessionTimeRef.current, xp: result.gained });
         setModuleOneSnapshot({ questions: [...questions], answers: { ...answers } });
+        // Persist module-1 annotations now (session_id will land at final submit).
+        setM1FlagDetails({ ...flagDetails });
+        setM1Eliminations({ ...eliminations });
         // Start the 10-minute break IMMEDIATELY so the user sees it first
         const ends = Date.now() + BREAK_SECONDS * 1000;
         try { localStorage.setItem(BREAK_KEY, String(ends)); } catch {}
