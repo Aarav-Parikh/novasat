@@ -110,6 +110,8 @@ interface Profile {
   treats: number;
   cosmetics: string[];
   equipped: Equipped;
+  adaptive_pacing_enabled: boolean;
+  full_sat_pacing_uses: number;
 }
 
 export interface SessionSummary {
@@ -156,7 +158,7 @@ interface NovaState {
   completeFocusTimer: () => Promise<number>;
   loadAll: (userId: string) => Promise<void>;
   updateProfile: (
-    patch: Partial<Pick<Profile, "display_name" | "target_score" | "test_date">>,
+    patch: Partial<Pick<Profile, "display_name" | "target_score" | "test_date" | "adaptive_pacing_enabled">>,
   ) => Promise<void>;
   markTaskComplete: (task: {
     taskKey: string;
@@ -217,6 +219,8 @@ const normalizeProfile = (raw: any): Profile | null => {
       raw.equipped && typeof raw.equipped === "object"
         ? (raw.equipped as Equipped)
         : {},
+    adaptive_pacing_enabled: raw.adaptive_pacing_enabled !== false,
+    full_sat_pacing_uses: typeof raw.full_sat_pacing_uses === "number" ? raw.full_sat_pacing_uses : 0,
   };
 };
 
