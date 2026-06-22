@@ -717,11 +717,38 @@ const TestSession = () => {
               <div className="mt-6 space-y-2.5">
                 {q.choices.map((c, i) => {
                   const isSel = answers[q.id] === i;
+                  const elimTag = eliminations[q.id]?.[i];
                   return (
-                    <button key={i} onClick={() => setAnswers((a) => ({ ...a, [q.id]: i }))} className={["w-full text-left px-4 py-3.5 rounded-lg border text-sm transition-all flex items-start gap-3", isSel ? "border-primary/60 bg-primary/10" : "border-border bg-muted/30 hover:border-secondary/50 hover:bg-muted/50"].join(" ")}>
-                      <span className="font-mono text-xs text-muted-foreground mt-0.5">{String.fromCharCode(65 + i)}</span>
-                      <span className="flex-1">{renderText(c)}</span>
-                    </button>
+                    <div key={i} className={["w-full rounded-lg border text-sm transition-all flex items-stretch", isSel ? "border-primary/60 bg-primary/10" : "border-border bg-muted/30"].join(" ")}>
+                      <button
+                        onClick={() => setAnswers((a) => ({ ...a, [q.id]: i }))}
+                        className={`flex-1 text-left px-4 py-3.5 flex items-start gap-3 ${elimTag ? "line-through opacity-50" : ""}`}
+                      >
+                        <span className="font-mono text-xs text-muted-foreground mt-0.5">{String.fromCharCode(65 + i)}</span>
+                        <span className="flex-1">{renderText(c)}</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (elimTag) {
+                            // Toggle off: un-eliminate, no tag needed
+                            setEliminations((prev) => {
+                              const next = { ...prev };
+                              const inner = { ...(next[q.id] ?? {}) };
+                              delete inner[i];
+                              if (Object.keys(inner).length === 0) delete next[q.id]; else next[q.id] = inner;
+                              return next;
+                            });
+                          } else {
+                            setElimPicker({ qid: q.id, choice: i });
+                          }
+                        }}
+                        title={elimTag ? `Eliminated: ${elimTag} (click to undo)` : "Eliminate this choice"}
+                        className="px-3 border-l border-border text-muted-foreground hover:text-destructive hover:bg-destructive/5"
+                        aria-label="Eliminate choice"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   );
                 })}
               </div>
