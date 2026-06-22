@@ -397,6 +397,8 @@ const TestSession = () => {
         setIdx(0);
         setAnswers({});
         setFlagged(new Set());
+        setFlagDetails({});
+        setEliminations({});
         setTimeByQuestion({});
         setSessionTime(0);
         sessionTimeRef.current = 0;
