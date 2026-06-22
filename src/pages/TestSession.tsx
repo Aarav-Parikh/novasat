@@ -8,6 +8,10 @@ import { sanitizeMath } from "@/lib/sanitize-math";
 import { toast } from "@/hooks/use-toast";
 import { taskCompletionKey } from "@/lib/practice-links";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { FlagCategoryPicker, FlagCategory } from "@/components/FlagCategoryPicker";
+import { ChoiceEliminator } from "@/components/ChoiceEliminator";
+import { PostTestReview, MissedQuestion } from "@/components/PostTestReview";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
