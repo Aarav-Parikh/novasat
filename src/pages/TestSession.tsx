@@ -8,6 +8,10 @@ import { sanitizeMath } from "@/lib/sanitize-math";
 import { toast } from "@/hooks/use-toast";
 import { taskCompletionKey } from "@/lib/practice-links";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { FlagCategoryPicker, FlagCategory } from "@/components/FlagCategoryPicker";
+import { ChoiceEliminator } from "@/components/ChoiceEliminator";
+import { PostTestReview, MissedQuestion } from "@/components/PostTestReview";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,6 +84,16 @@ const TestSession = () => {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
+  const [flagDetails, setFlagDetails] = useState<Record<string, { category: FlagCategory; note?: string }>>({});
+  const [eliminations, setEliminations] = useState<Record<string, Record<number, string>>>({});
+  const [flagPickerOpen, setFlagPickerOpen] = useState(false);
+  const [elimPicker, setElimPicker] = useState<{ qid: string; choice: number } | null>(null);
+  const [postReviewMissed, setPostReviewMissed] = useState<MissedQuestion[] | null>(null);
+  const profile = useNova((s) => s.profile);
+  const adaptivePacingOn = profile?.adaptive_pacing_enabled !== false;
+  const showPacingCues = (m === "full" || m === "shortfull") && adaptivePacingOn && (profile?.full_sat_pacing_uses ?? 0) < 3;
+  const [m1FlagDetails, setM1FlagDetails] = useState<Record<string, { category: FlagCategory; note?: string }>>({});
+  const [m1Eliminations, setM1Eliminations] = useState<Record<string, Record<number, string>>>({});
   const [sessionTime, setSessionTime] = useState(0);
   const sessionTimeRef = useRef(0);
   const timerDisplayRef = useRef<HTMLSpanElement>(null);
@@ -282,18 +296,85 @@ const TestSession = () => {
     return { correct, gained };
   };
 
+  const persistAnnotations = async (sessionId: string | null, qSet: Question[]) => {
+    const mergedFlags = { ...m1FlagDetails, ...flagDetails };
+    const mergedElims = { ...m1Eliminations, ...eliminations };
+    const rows = qSet
+      .map((qq) => {
+        const fd = mergedFlags[qq.id];
+        const elim = mergedElims[qq.id];
+        if (!fd && !elim) return null;
+        return {
+          user_id: profile?.id,
+          session_id: sessionId,
+          question_id: qq.id,
+          question_prompt: qq.prompt.slice(0, 500),
+          topic: qq.topic,
+          section: qq.section,
+          flag_category: fd?.category ?? null,
+          flag_note: fd?.note ?? null,
+          eliminations: elim ?? {},
+        };
+      })
+      .filter(Boolean);
+    if (!rows.length || !profile?.id) return;
+    try {
+      await supabase.from("question_annotations").insert(rows as any);
+    } catch (e) { console.error("annotation save failed", e); }
+  };
+
+  const bumpPacingUsesIfNeeded = async () => {
+    if (!showPacingCues) return;
+    try { await supabase.rpc("increment_pacing_uses" as any); } catch {}
+  };
+
+  const buildMissedList = (qSet: Question[], aSet: Record<string, AnswerValue>): MissedQuestion[] =>
+    qSet.filter((qq) => !isCorrectAnswer(qq, aSet[qq.id])).map((qq) => {
+      const ans = aSet[qq.id];
+      const userText = qq.responseType === "spr"
+        ? (ans !== undefined ? String(ans) : "—")
+        : (typeof ans === "number" ? `${String.fromCharCode(65 + ans)}. ${qq.choices[ans]}` : "—");
+      const correctText = qq.responseType === "spr"
+        ? (qq.correctText ?? qq.choices[qq.correct])
+        : `${String.fromCharCode(65 + qq.correct)}. ${qq.choices[qq.correct]}`;
+      return {
+        question_id: qq.id,
+        section: qq.section,
+        topic: qq.topic,
+        prompt: qq.prompt,
+        user_answer: userText,
+        correct_answer: correctText,
+        explanation: qq.explanation,
+        flag_category: (m1FlagDetails[qq.id] ?? flagDetails[qq.id])?.category ?? null,
+        eliminations: (() => {
+          const e = m1Eliminations[qq.id] ?? eliminations[qq.id];
+          return e ? Object.fromEntries(Object.entries(e).map(([k, v]) => [String.fromCharCode(65 + Number(k)), v])) : {};
+        })(),
+      };
+    });
+
   const finishSession = async (correct: number, total: number, sessionXpEarned: number) => {
     // Snapshot for the answer key BEFORE marking done so the UI can render it.
-    setAnswerKey({ questions: [...questions], answers: { ...answers } });
+    const finalQuestions = [...questions];
+    const finalAnswers = { ...answers };
+    setAnswerKey({ questions: finalQuestions, answers: finalAnswers });
     setDone(true);
+    // Compute combined missed list for the AI review dashboard.
+    const allQ = moduleOneSnapshot ? [...moduleOneSnapshot.questions, ...finalQuestions] : finalQuestions;
+    const allA = moduleOneSnapshot ? { ...moduleOneSnapshot.answers, ...finalAnswers } : finalAnswers;
+    setPostReviewMissed(buildMissedList(allQ, allA));
     try {
-      await recordSession({
+      const res = await recordSession({
         mode: m,
         score: correct + completed.correct,
         total: total + completed.total,
         duration: sessionTimeRef.current + completed.seconds,
         xpEarned: sessionXpEarned,
       });
+      const sessionId = (res as any)?.sessionId ?? null;
+      // Persist annotations for both modules if full
+      await persistAnnotations(sessionId, allQ);
+      await bumpPacingUsesIfNeeded();
       if (taskLabel && dayLabel) await markTaskComplete({ taskKey: taskCompletionKey(dayLabel, taskLabel), taskLabel, dayLabel });
       // Re-sync profile from DB to ensure XP display is accurate everywhere
       await syncProfile();
@@ -314,6 +395,9 @@ const TestSession = () => {
         const harder = result.correct / Math.max(1, questions.length) >= 0.6;
         setCompleted({ correct: result.correct, total: questions.length, seconds: sessionTimeRef.current, xp: result.gained });
         setModuleOneSnapshot({ questions: [...questions], answers: { ...answers } });
+        // Persist module-1 annotations now (session_id will land at final submit).
+        setM1FlagDetails({ ...flagDetails });
+        setM1Eliminations({ ...eliminations });
         // Start the 10-minute break IMMEDIATELY so the user sees it first
         const ends = Date.now() + BREAK_SECONDS * 1000;
         try { localStorage.setItem(BREAK_KEY, String(ends)); } catch {}
@@ -323,6 +407,8 @@ const TestSession = () => {
         setIdx(0);
         setAnswers({});
         setFlagged(new Set());
+        setFlagDetails({});
+        setEliminations({});
         setTimeByQuestion({});
         setSessionTime(0);
         sessionTimeRef.current = 0;
@@ -547,6 +633,11 @@ const TestSession = () => {
               </Tabs>
             </div>
           )}
+
+          {/* Post-Test AI Review Dashboard (all modes except mistake-review) */}
+          {m !== "review" && postReviewMissed !== null && (
+            <PostTestReview missed={postReviewMissed} />
+          )}
         </div>
       </div>
     );
@@ -570,14 +661,18 @@ const TestSession = () => {
                 <p className="text-sm text-muted-foreground mt-1">Flagged questions are marked. Choose a number to revisit it, or proceed to turn it in.</p>
               </div>
             </div>
-            <div className="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-11 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2">
               {questions.map((qq, i) => {
                 const hasAnswer = answers[qq.id] !== undefined && String(answers[qq.id]).trim() !== "";
                 const isFlagged = flagged.has(qq.id);
+                const cat = flagDetails[qq.id]?.category;
                 return (
-                  <button key={qq.id} onClick={() => { setIdx(i); setReviewing(false); }} className={`relative h-11 rounded-lg border text-sm font-mono transition-colors ${hasAnswer ? "bg-primary/15 border-primary/40" : "bg-muted/20 border-border"}`}>
-                    {i + 1}
-                    {isFlagged && <Flag className="absolute -right-1 -top-1 h-3.5 w-3.5 text-warning fill-warning" />}
+                  <button key={qq.id} onClick={() => { setIdx(i); setReviewing(false); }} className={`relative min-h-[3.25rem] px-2 py-1.5 rounded-lg border text-sm font-mono transition-colors text-left ${hasAnswer ? "bg-primary/15 border-primary/40" : "bg-muted/20 border-border"}`}>
+                    <span>{i + 1}</span>
+                    {isFlagged && <Flag className="absolute right-1 top-1 h-3 w-3 text-warning fill-warning" />}
+                    {isFlagged && cat && (
+                      <div className="mt-1 text-[9px] leading-tight text-warning/90 truncate" title={cat}>{cat}</div>
+                    )}
                   </button>
                 );
               })}
@@ -606,7 +701,21 @@ const TestSession = () => {
               {isFullLike && <span className="text-xs px-2 py-0.5 rounded bg-muted border border-border font-mono">{module === 1 ? "ELA" : "Math"}</span>}
             </div>
             <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground">
-              <span ref={timerDisplayRef} className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {fmtTime(Math.max(0, currentLimit - sessionTime))}</span>
+              {(() => {
+                const expected = currentLimit * ((idx + 1) / Math.max(1, questions.length));
+                const diff = sessionTime - expected; // positive = behind
+                let cls = "text-muted-foreground";
+                if (showPacingCues) {
+                  if (diff > 30) cls = "text-destructive";
+                  else if (Math.abs(diff) <= 10) cls = "text-success";
+                  else cls = "text-warning";
+                }
+                return (
+                  <span ref={timerDisplayRef} className={`flex items-center gap-1.5 ${cls}`} title={showPacingCues ? "Adaptive pace cue" : undefined}>
+                    <Clock className="h-3.5 w-3.5" /> {fmtTime(Math.max(0, currentLimit - sessionTime))}
+                  </span>
+                );
+              })()}
               <span>{idx + 1} / {questions.length}</span>
               <button onClick={() => setExitOpen(true)} className="p-1.5 rounded hover:bg-muted" aria-label="Exit"><X className="h-4 w-4" /></button>
             </div>
@@ -629,11 +738,38 @@ const TestSession = () => {
               <div className="mt-6 space-y-2.5">
                 {q.choices.map((c, i) => {
                   const isSel = answers[q.id] === i;
+                  const elimTag = eliminations[q.id]?.[i];
                   return (
-                    <button key={i} onClick={() => setAnswers((a) => ({ ...a, [q.id]: i }))} className={["w-full text-left px-4 py-3.5 rounded-lg border text-sm transition-all flex items-start gap-3", isSel ? "border-primary/60 bg-primary/10" : "border-border bg-muted/30 hover:border-secondary/50 hover:bg-muted/50"].join(" ")}>
-                      <span className="font-mono text-xs text-muted-foreground mt-0.5">{String.fromCharCode(65 + i)}</span>
-                      <span className="flex-1">{renderText(c)}</span>
-                    </button>
+                    <div key={i} className={["w-full rounded-lg border text-sm transition-all flex items-stretch", isSel ? "border-primary/60 bg-primary/10" : "border-border bg-muted/30"].join(" ")}>
+                      <button
+                        onClick={() => setAnswers((a) => ({ ...a, [q.id]: i }))}
+                        className={`flex-1 text-left px-4 py-3.5 flex items-start gap-3 ${elimTag ? "line-through opacity-50" : ""}`}
+                      >
+                        <span className="font-mono text-xs text-muted-foreground mt-0.5">{String.fromCharCode(65 + i)}</span>
+                        <span className="flex-1">{renderText(c)}</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (elimTag) {
+                            // Toggle off: un-eliminate, no tag needed
+                            setEliminations((prev) => {
+                              const next = { ...prev };
+                              const inner = { ...(next[q.id] ?? {}) };
+                              delete inner[i];
+                              if (Object.keys(inner).length === 0) delete next[q.id]; else next[q.id] = inner;
+                              return next;
+                            });
+                          } else {
+                            setElimPicker({ qid: q.id, choice: i });
+                          }
+                        }}
+                        title={elimTag ? `Eliminated: ${elimTag} (click to undo)` : "Eliminate this choice"}
+                        className="px-3 border-l border-border text-muted-foreground hover:text-destructive hover:bg-destructive/5"
+                        aria-label="Eliminate choice"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   );
                 })}
               </div>
@@ -643,8 +779,20 @@ const TestSession = () => {
 
         <footer className="border-t border-border/60 bg-background/60 backdrop-blur-xl">
           <div className="max-w-2xl mx-auto px-5 py-3 flex items-center justify-between">
-            <button onClick={() => setFlagged((prev) => { const next = new Set(prev); next.has(q.id) ? next.delete(q.id) : next.add(q.id); return next; })} className={`text-xs inline-flex items-center gap-1.5 ${flagged.has(q.id) ? "text-warning" : "text-muted-foreground hover:text-foreground"}`}>
-              <Flag className={`h-3.5 w-3.5 ${flagged.has(q.id) ? "fill-warning" : ""}`} /> Flag
+            <button
+              onClick={() => {
+                if (flagged.has(q.id)) {
+                  // Toggle off
+                  setFlagged((prev) => { const next = new Set(prev); next.delete(q.id); return next; });
+                  setFlagDetails((prev) => { const next = { ...prev }; delete next[q.id]; return next; });
+                } else {
+                  setFlagPickerOpen(true);
+                }
+              }}
+              className={`text-xs inline-flex items-center gap-1.5 ${flagged.has(q.id) ? "text-warning" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <Flag className={`h-3.5 w-3.5 ${flagged.has(q.id) ? "fill-warning" : ""}`} />
+              {flagged.has(q.id) ? `Flagged · ${flagDetails[q.id]?.category ?? ""}` : "Flag"}
             </button>
             <div className="flex items-center gap-2">
               {idx > 0 && <button onClick={() => { stampTime(); setIdx(idx - 1); }} className="px-4 py-2.5 rounded-lg border border-border bg-muted/30 text-sm font-medium">Back</button>}
@@ -671,6 +819,31 @@ const TestSession = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <FlagCategoryPicker
+        open={flagPickerOpen}
+        initialCategory={flagDetails[q?.id ?? ""]?.category}
+        initialNote={flagDetails[q?.id ?? ""]?.note}
+        onCancel={() => setFlagPickerOpen(false)}
+        onConfirm={(category, note) => {
+          if (!q) return;
+          setFlagged((prev) => new Set(prev).add(q.id));
+          setFlagDetails((prev) => ({ ...prev, [q.id]: { category, note } }));
+          setFlagPickerOpen(false);
+        }}
+      />
+      <ChoiceEliminator
+        open={!!elimPicker}
+        choiceLetter={elimPicker ? String.fromCharCode(65 + elimPicker.choice) : ""}
+        onCancel={() => setElimPicker(null)}
+        onConfirm={(tag) => {
+          if (!elimPicker) return;
+          setEliminations((prev) => ({
+            ...prev,
+            [elimPicker.qid]: { ...(prev[elimPicker.qid] ?? {}), [elimPicker.choice]: tag },
+          }));
+          setElimPicker(null);
+        }}
+      />
     </div>
   );
 };

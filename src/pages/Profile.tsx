@@ -105,6 +105,20 @@ const Profile = () => {
               <input type="date" value={testDate} onChange={(e) => setTestDate(e.target.value)} className="rounded-lg border border-border bg-background/50 px-3 py-2 text-sm" />
             </div>
             <button onClick={save} className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Save changes</button>
+            <label className="mt-3 flex items-start justify-between gap-3 rounded-lg border border-border bg-background/40 px-3 py-2.5 cursor-pointer">
+              <span>
+                <span className="text-sm font-medium block">Adaptive pacing cues</span>
+                <span className="text-[11px] text-muted-foreground block">Color-coded timer during your first 3 full SAT modules. Fades off automatically after.</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={profile?.adaptive_pacing_enabled !== false}
+                onChange={async (e) => {
+                  await updateProfile({ adaptive_pacing_enabled: e.target.checked });
+                }}
+                className="mt-1 h-4 w-4"
+              />
+            </label>
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link to="/pet" className="inline-flex px-4 py-2 rounded-lg bg-muted border border-border text-sm font-medium">Visit Buddy</Link>

@@ -139,11 +139,13 @@ export type Database = {
       profiles: {
         Row: {
           active_boosts: Json
+          adaptive_pacing_enabled: boolean
           cosmetics: Json
           created_at: string
           display_name: string | null
           equipped: Json
           focus_minutes_total: number
+          full_sat_pacing_uses: number
           id: string
           inventory: Json
           last_login_at: string | null
@@ -163,11 +165,13 @@ export type Database = {
         }
         Insert: {
           active_boosts?: Json
+          adaptive_pacing_enabled?: boolean
           cosmetics?: Json
           created_at?: string
           display_name?: string | null
           equipped?: Json
           focus_minutes_total?: number
+          full_sat_pacing_uses?: number
           id: string
           inventory?: Json
           last_login_at?: string | null
@@ -187,11 +191,13 @@ export type Database = {
         }
         Update: {
           active_boosts?: Json
+          adaptive_pacing_enabled?: boolean
           cosmetics?: Json
           created_at?: string
           display_name?: string | null
           equipped?: Json
           focus_minutes_total?: number
+          full_sat_pacing_uses?: number
           id?: string
           inventory?: Json
           last_login_at?: string | null
@@ -210,6 +216,59 @@ export type Database = {
           xp_boost_until?: string | null
         }
         Relationships: []
+      }
+      question_annotations: {
+        Row: {
+          created_at: string
+          eliminations: Json
+          flag_category: string | null
+          flag_note: string | null
+          id: string
+          question_id: string
+          question_prompt: string | null
+          section: string | null
+          session_id: string | null
+          topic: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          eliminations?: Json
+          flag_category?: string | null
+          flag_note?: string | null
+          id?: string
+          question_id: string
+          question_prompt?: string | null
+          section?: string | null
+          session_id?: string | null
+          topic?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          eliminations?: Json
+          flag_category?: string | null
+          flag_note?: string | null
+          id?: string
+          question_id?: string
+          question_prompt?: string | null
+          section?: string | null
+          session_id?: string | null
+          topic?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_annotations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -387,6 +446,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_pacing_uses: { Args: never; Returns: number }
       mark_review_prompt_dismissed: { Args: never; Returns: undefined }
       mark_tutorial_completed: { Args: never; Returns: undefined }
       record_login_and_get_onboarding: { Args: never; Returns: Json }
