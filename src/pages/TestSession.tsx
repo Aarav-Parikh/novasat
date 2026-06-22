@@ -758,8 +758,20 @@ const TestSession = () => {
 
         <footer className="border-t border-border/60 bg-background/60 backdrop-blur-xl">
           <div className="max-w-2xl mx-auto px-5 py-3 flex items-center justify-between">
-            <button onClick={() => setFlagged((prev) => { const next = new Set(prev); next.has(q.id) ? next.delete(q.id) : next.add(q.id); return next; })} className={`text-xs inline-flex items-center gap-1.5 ${flagged.has(q.id) ? "text-warning" : "text-muted-foreground hover:text-foreground"}`}>
-              <Flag className={`h-3.5 w-3.5 ${flagged.has(q.id) ? "fill-warning" : ""}`} /> Flag
+            <button
+              onClick={() => {
+                if (flagged.has(q.id)) {
+                  // Toggle off
+                  setFlagged((prev) => { const next = new Set(prev); next.delete(q.id); return next; });
+                  setFlagDetails((prev) => { const next = { ...prev }; delete next[q.id]; return next; });
+                } else {
+                  setFlagPickerOpen(true);
+                }
+              }}
+              className={`text-xs inline-flex items-center gap-1.5 ${flagged.has(q.id) ? "text-warning" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <Flag className={`h-3.5 w-3.5 ${flagged.has(q.id) ? "fill-warning" : ""}`} />
+              {flagged.has(q.id) ? `Flagged · ${flagDetails[q.id]?.category ?? ""}` : "Flag"}
             </button>
             <div className="flex items-center gap-2">
               {idx > 0 && <button onClick={() => { stampTime(); setIdx(idx - 1); }} className="px-4 py-2.5 rounded-lg border border-border bg-muted/30 text-sm font-medium">Back</button>}
@@ -786,6 +798,31 @@ const TestSession = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <FlagCategoryPicker
+        open={flagPickerOpen}
+        initialCategory={flagDetails[q?.id ?? ""]?.category}
+        initialNote={flagDetails[q?.id ?? ""]?.note}
+        onCancel={() => setFlagPickerOpen(false)}
+        onConfirm={(category, note) => {
+          if (!q) return;
+          setFlagged((prev) => new Set(prev).add(q.id));
+          setFlagDetails((prev) => ({ ...prev, [q.id]: { category, note } }));
+          setFlagPickerOpen(false);
+        }}
+      />
+      <ChoiceEliminator
+        open={!!elimPicker}
+        choiceLetter={elimPicker ? String.fromCharCode(65 + elimPicker.choice) : ""}
+        onCancel={() => setElimPicker(null)}
+        onConfirm={(tag) => {
+          if (!elimPicker) return;
+          setEliminations((prev) => ({
+            ...prev,
+            [elimPicker.qid]: { ...(prev[elimPicker.qid] ?? {}), [elimPicker.choice]: tag },
+          }));
+          setElimPicker(null);
+        }}
+      />
     </div>
   );
 };
