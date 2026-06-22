@@ -621,6 +621,11 @@ const TestSession = () => {
               </Tabs>
             </div>
           )}
+
+          {/* Post-Test AI Review Dashboard (all modes except mistake-review) */}
+          {m !== "review" && postReviewMissed !== null && (
+            <PostTestReview missed={postReviewMissed} />
+          )}
         </div>
       </div>
     );
