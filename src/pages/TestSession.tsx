@@ -92,6 +92,8 @@ const TestSession = () => {
   const profile = useNova((s) => s.profile);
   const adaptivePacingOn = profile?.adaptive_pacing_enabled !== false;
   const showPacingCues = (m === "full" || m === "shortfull") && adaptivePacingOn && (profile?.full_sat_pacing_uses ?? 0) < 3;
+  const [m1FlagDetails, setM1FlagDetails] = useState<Record<string, { category: FlagCategory; note?: string }>>({});
+  const [m1Eliminations, setM1Eliminations] = useState<Record<string, Record<number, string>>>({});
   const [sessionTime, setSessionTime] = useState(0);
   const sessionTimeRef = useRef(0);
   const timerDisplayRef = useRef<HTMLSpanElement>(null);
