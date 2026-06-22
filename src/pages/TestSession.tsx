@@ -680,7 +680,21 @@ const TestSession = () => {
               {isFullLike && <span className="text-xs px-2 py-0.5 rounded bg-muted border border-border font-mono">{module === 1 ? "ELA" : "Math"}</span>}
             </div>
             <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground">
-              <span ref={timerDisplayRef} className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {fmtTime(Math.max(0, currentLimit - sessionTime))}</span>
+              {(() => {
+                const expected = currentLimit * ((idx + 1) / Math.max(1, questions.length));
+                const diff = sessionTime - expected; // positive = behind
+                let cls = "text-muted-foreground";
+                if (showPacingCues) {
+                  if (diff > 30) cls = "text-destructive";
+                  else if (Math.abs(diff) <= 10) cls = "text-success";
+                  else cls = "text-warning";
+                }
+                return (
+                  <span ref={timerDisplayRef} className={`flex items-center gap-1.5 ${cls}`} title={showPacingCues ? "Adaptive pace cue" : undefined}>
+                    <Clock className="h-3.5 w-3.5" /> {fmtTime(Math.max(0, currentLimit - sessionTime))}
+                  </span>
+                );
+              })()}
               <span>{idx + 1} / {questions.length}</span>
               <button onClick={() => setExitOpen(true)} className="p-1.5 rounded hover:bg-muted" aria-label="Exit"><X className="h-4 w-4" /></button>
             </div>
