@@ -749,6 +749,38 @@ const TestSession = () => {
             </div>
           </div>
           <div className="h-0.5 bg-muted"><div className="h-full bg-gradient-to-r from-primary to-secondary transition-all" style={{ width: `${(answeredCount / questions.length) * 100}%` }} /></div>
+          {showPacingCues && (() => {
+            // Two adaptive pacing bars:
+            //  1) Per-question pace — where you should be on the current question vs how far the timer has run
+            //  2) Overall test pace — whether you're on track to finish before the time limit
+            const expectedQ = (idx + 1) / Math.max(1, questions.length); // 0..1
+            const elapsedFrac = Math.max(0, Math.min(1, sessionTime / currentLimit));
+            const qDiff = elapsedFrac - expectedQ; // >0 = behind on this question
+            const overallExpected = answeredCount / Math.max(1, questions.length);
+            const oDiff = elapsedFrac - overallExpected; // >0 = behind overall
+            const color = (d: number) =>
+              d > 0.05 ? "bg-destructive" : d < -0.05 ? "bg-warning" : "bg-success";
+            const Bar = ({ label, frac, marker, diff }: { label: string; frac: number; marker: number; diff: number }) => (
+              <div className="px-5 py-1.5">
+                <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                  <span>{label}</span>
+                  <span className={diff > 0.05 ? "text-destructive" : diff < -0.05 ? "text-warning" : "text-success"}>
+                    {diff > 0.05 ? "Behind pace" : diff < -0.05 ? "Ahead of pace" : "On pace"}
+                  </span>
+                </div>
+                <div className="relative h-1.5 rounded bg-muted overflow-hidden">
+                  <div className={`h-full ${color(diff)} transition-all`} style={{ width: `${Math.min(100, frac * 100)}%` }} />
+                  <div className="absolute top-0 bottom-0 w-0.5 bg-foreground/70" style={{ left: `${Math.min(100, Math.max(0, marker * 100))}%` }} />
+                </div>
+              </div>
+            );
+            return (
+              <div className="max-w-3xl mx-auto">
+                <Bar label="This-question pace" frac={elapsedFrac} marker={expectedQ} diff={qDiff} />
+                <Bar label="Overall test pace" frac={elapsedFrac} marker={overallExpected} diff={oDiff} />
+              </div>
+            );
+          })()}
         </header>
 
         <div className="flex-1 flex items-start justify-center px-5 py-10">
