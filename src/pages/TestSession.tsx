@@ -170,21 +170,26 @@ const TestSession = () => {
         const modeSection = m === "math" ? "Math" : m === "reading" ? "Reading & Writing" : undefined;
         const requestedSection = isFullLike ? fullSection : modeSection;
         const modeTopic = requestedTopic && requestedTopic !== "Mixed SAT Skills" ? requestedTopic : undefined;
-        // Request extra questions to account for potential section mismatches
-        const requestCount = isFullLike ? (targetModule === 1 ? fullCounts.m1 : fullCounts.m2) : MODULE_SIZE[m];
+        const targetCount = isFullLike ? (targetModule === 1 ? fullCounts.m1 : fullCounts.m2) : MODULE_SIZE[m];
+        // Request extra questions so the post-filter pool is large enough
+        const requestCount = Math.ceil(targetCount * 1.4);
         const generatorMode = m === "review" ? "redemption" : m === "shortfull" ? "full" : m;
-        const qs = await generateQuestions({
+        const fetchBatch = () => generateQuestions({
           mode: generatorMode,
           count: requestCount,
           difficultyBias: bias,
           topic: m === "redemption" ? weakTopic : modeTopic,
           section: requestedSection ?? undefined,
         });
-        // Filter to only include questions matching the requested section
-        const filtered = requestedSection
-          ? qs.filter((q) => q.section === requestedSection)
-          : qs;
-        const targetCount = isFullLike ? (targetModule === 1 ? fullCounts.m1 : fullCounts.m2) : MODULE_SIZE[m];
+        let pool: Question[] = await fetchBatch();
+        let filtered = requestedSection ? pool.filter((q) => q.section === requestedSection) : pool;
+        // Retry once if the AI returned too few items of the requested subject
+        if (requestedSection && filtered.length < targetCount) {
+          try {
+            const more = await fetchBatch();
+            filtered = [...filtered, ...more.filter((q) => q.section === requestedSection)];
+          } catch {}
+        }
         setQuestions(prepareQuestions(filtered.slice(0, targetCount)));
       }
     } catch (e: any) {
