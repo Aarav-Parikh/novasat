@@ -46,7 +46,7 @@ const features = [
 
 export default function Landing() {
   const { user } = useAuth();
-  const ctaHref = user ? "/" : "/auth";
+  const ctaHref = user ? "/app" : "/auth";
   const ctaLabel = user ? "Open dashboard" : "Start training free";
 
   return (
