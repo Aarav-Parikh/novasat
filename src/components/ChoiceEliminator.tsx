@@ -1,24 +1,37 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-export type EliminationTag = "Out of Scope" | "Too Extreme" | "Factually Faulty" | "Contradicts Passage" | "Other";
+export type SubjectKind = "ela" | "math";
 
-export const ELIM_TAGS: EliminationTag[] = [
+export const ELA_TAGS = [
   "Out of Scope",
   "Too Extreme",
   "Factually Faulty",
   "Contradicts Passage",
   "Other",
-];
+] as const;
+
+export const MATH_TAGS = [
+  "Wrong Operation",
+  "Sign / Arithmetic Error",
+  "Misread the Problem",
+  "Doesn't Satisfy Constraint",
+  "Other",
+] as const;
+
+// Backwards-compat union
+export type EliminationTag = typeof ELA_TAGS[number] | typeof MATH_TAGS[number];
 
 interface Props {
   open: boolean;
   choiceLetter: string;
+  subject?: SubjectKind;
   onCancel: () => void;
   onConfirm: (tag: string) => void;
 }
 
-export function ChoiceEliminator({ open, choiceLetter, onCancel, onConfirm }: Props) {
-  const [tag, setTag] = useState<EliminationTag | null>(null);
+export function ChoiceEliminator({ open, choiceLetter, subject = "ela", onCancel, onConfirm }: Props) {
+  const tags = useMemo(() => (subject === "math" ? MATH_TAGS : ELA_TAGS), [subject]);
+  const [tag, setTag] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const noteRef = useRef<HTMLInputElement>(null);
 
@@ -32,12 +45,12 @@ export function ChoiceEliminator({ open, choiceLetter, onCancel, onConfirm }: Pr
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onCancel}>
       <div className="glass max-w-md w-full p-5 animate-scale-in" onClick={(e) => e.stopPropagation()}>
-        <div className="text-[10px] uppercase tracking-widest text-secondary">Eliminate choice {choiceLetter}</div>
+        <div className="text-[10px] uppercase tracking-widest text-secondary">Eliminate choice {choiceLetter} · {subject === "math" ? "Math" : "ELA"}</div>
         <h3 className="font-display text-lg font-semibold mt-1">What's wrong with this answer?</h3>
         <p className="text-xs text-muted-foreground mt-1">Diagnose the flaw — required to cross it out. The app won't tell you if you're right.</p>
 
         <div className="mt-4 grid gap-2">
-          {ELIM_TAGS.map((t) => {
+          {tags.map((t) => {
             const active = tag === t;
             return (
               <button
