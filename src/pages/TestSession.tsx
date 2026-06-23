@@ -32,8 +32,8 @@ function fmtTime(s: number) {
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
 
-const MODULE_SIZE: Record<Mode, number> = { full: 54, shortfull: 20, reading: 27, math: 44, redemption: 12, review: 10 };
-const MODULE_LIMIT: Record<Mode, number> = { full: 64 * 60, shortfull: 22 * 60, reading: 32 * 60, math: 70 * 60, redemption: 18 * 60, review: 15 * 60 };
+const MODULE_SIZE: Record<Mode, number> = { full: 54, shortfull: 20, reading: 12, math: 12, redemption: 12, review: 10 };
+const MODULE_LIMIT: Record<Mode, number> = { full: 64 * 60, shortfull: 22 * 60, reading: 16 * 60, math: 20 * 60, redemption: 18 * 60, review: 15 * 60 };
 const BREAK_KEY = "novaprep:sat-break-endsAt";
 const BREAK_SECONDS = 10 * 60;
 
