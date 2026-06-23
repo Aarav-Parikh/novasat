@@ -46,7 +46,7 @@ const features = [
 
 export default function Landing() {
   const { user } = useAuth();
-  const ctaHref = user ? "/" : "/auth";
+  const ctaHref = user ? "/app" : "/auth";
   const ctaLabel = user ? "Open dashboard" : "Start training free";
 
   return (
@@ -71,7 +71,7 @@ export default function Landing() {
             How it works
           </a>
           <Link
-            to={ctaHref}
+            to={user ? "/app" : "/auth"}
             className="px-3.5 py-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-primary-foreground text-sm font-semibold"
           >
             {user ? "Dashboard" : "Sign in"}

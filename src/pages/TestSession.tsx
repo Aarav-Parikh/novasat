@@ -32,8 +32,8 @@ function fmtTime(s: number) {
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
 
-const MODULE_SIZE: Record<Mode, number> = { full: 54, shortfull: 20, reading: 27, math: 44, redemption: 12, review: 10 };
-const MODULE_LIMIT: Record<Mode, number> = { full: 64 * 60, shortfull: 22 * 60, reading: 32 * 60, math: 70 * 60, redemption: 18 * 60, review: 15 * 60 };
+const MODULE_SIZE: Record<Mode, number> = { full: 54, shortfull: 20, reading: 12, math: 12, redemption: 12, review: 10 };
+const MODULE_LIMIT: Record<Mode, number> = { full: 64 * 60, shortfull: 22 * 60, reading: 16 * 60, math: 20 * 60, redemption: 18 * 60, review: 15 * 60 };
 const BREAK_KEY = "novaprep:sat-break-endsAt";
 const BREAK_SECONDS = 10 * 60;
 
@@ -170,21 +170,26 @@ const TestSession = () => {
         const modeSection = m === "math" ? "Math" : m === "reading" ? "Reading & Writing" : undefined;
         const requestedSection = isFullLike ? fullSection : modeSection;
         const modeTopic = requestedTopic && requestedTopic !== "Mixed SAT Skills" ? requestedTopic : undefined;
-        // Request extra questions to account for potential section mismatches
-        const requestCount = isFullLike ? (targetModule === 1 ? fullCounts.m1 : fullCounts.m2) : MODULE_SIZE[m];
+        const targetCount = isFullLike ? (targetModule === 1 ? fullCounts.m1 : fullCounts.m2) : MODULE_SIZE[m];
+        // Request extra questions so the post-filter pool is large enough
+        const requestCount = Math.ceil(targetCount * 1.4);
         const generatorMode = m === "review" ? "redemption" : m === "shortfull" ? "full" : m;
-        const qs = await generateQuestions({
+        const fetchBatch = () => generateQuestions({
           mode: generatorMode,
           count: requestCount,
           difficultyBias: bias,
           topic: m === "redemption" ? weakTopic : modeTopic,
           section: requestedSection ?? undefined,
         });
-        // Filter to only include questions matching the requested section
-        const filtered = requestedSection
-          ? qs.filter((q) => q.section === requestedSection)
-          : qs;
-        const targetCount = isFullLike ? (targetModule === 1 ? fullCounts.m1 : fullCounts.m2) : MODULE_SIZE[m];
+        let pool: Question[] = await fetchBatch();
+        let filtered = requestedSection ? pool.filter((q) => q.section === requestedSection) : pool;
+        // Retry once if the AI returned too few items of the requested subject
+        if (requestedSection && filtered.length < targetCount) {
+          try {
+            const more = await fetchBatch();
+            filtered = [...filtered, ...more.filter((q) => q.section === requestedSection)];
+          } catch {}
+        }
         setQuestions(prepareQuestions(filtered.slice(0, targetCount)));
       }
     } catch (e: any) {
@@ -611,8 +616,40 @@ const TestSession = () => {
             )}
           </div>
 
-          {/* Answer Key with Math / ELA tabs */}
-          {(elaList.length > 0 || mathList.length > 0) && (
+          {/* Unified Post-Test Review Dashboard (Answer Key + AI tabs) */}
+          {m !== "review" && postReviewMissed !== null && (
+            <PostTestReview
+              missed={postReviewMissed}
+              answerKey={(() => {
+                const sortedMath = mathList.map((qq, i) => ({ qq, i }));
+                const sortedEla = elaList.map((qq, i) => ({ qq, i }));
+                return [...sortedMath, ...sortedEla].map(({ qq, i }) => {
+                  const ans = allAns[qq.id];
+                  const ok = isCorrectAnswer(qq, ans);
+                  const userText = qq.responseType === "spr"
+                    ? (ans !== undefined ? String(ans) : "—")
+                    : (typeof ans === "number" ? `${String.fromCharCode(65 + ans)}. ${qq.choices[ans]}` : "—");
+                  const correctText = qq.responseType === "spr"
+                    ? (qq.correctText ?? qq.choices[qq.correct])
+                    : `${String.fromCharCode(65 + qq.correct)}. ${qq.choices[qq.correct]}`;
+                  return {
+                    id: qq.id,
+                    index: i,
+                    section: qq.section,
+                    topic: qq.topic,
+                    difficulty: qq.difficulty,
+                    prompt: qq.prompt,
+                    userText,
+                    correctText,
+                    explanation: qq.explanation,
+                    ok,
+                  };
+                });
+              })()}
+            />
+          )}
+          {/* Fallback simple answer key for mistake-review mode */}
+          {m === "review" && (elaList.length > 0 || mathList.length > 0) && (
             <div className="mt-8">
               <h3 className="font-display text-2xl font-semibold mb-3">Answer Key</h3>
               <Tabs defaultValue={mathList.length >= elaList.length ? "math" : "ela"} className="w-full">
@@ -621,22 +658,13 @@ const TestSession = () => {
                   <TabsTrigger value="ela">ELA ({elaList.length})</TabsTrigger>
                 </TabsList>
                 <TabsContent value="math" className="mt-4 space-y-3">
-                  {mathList.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">No math questions in this session.</div>
-                  ) : mathList.map((qq, i) => renderRow(qq, i))}
+                  {mathList.length === 0 ? <div className="text-sm text-muted-foreground">No math questions.</div> : mathList.map((qq, i) => renderRow(qq, i))}
                 </TabsContent>
                 <TabsContent value="ela" className="mt-4 space-y-3">
-                  {elaList.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">No ELA questions in this session.</div>
-                  ) : elaList.map((qq, i) => renderRow(qq, i))}
+                  {elaList.length === 0 ? <div className="text-sm text-muted-foreground">No ELA questions.</div> : elaList.map((qq, i) => renderRow(qq, i))}
                 </TabsContent>
               </Tabs>
             </div>
-          )}
-
-          {/* Post-Test AI Review Dashboard (all modes except mistake-review) */}
-          {m !== "review" && postReviewMissed !== null && (
-            <PostTestReview missed={postReviewMissed} />
           )}
         </div>
       </div>
@@ -721,6 +749,38 @@ const TestSession = () => {
             </div>
           </div>
           <div className="h-0.5 bg-muted"><div className="h-full bg-gradient-to-r from-primary to-secondary transition-all" style={{ width: `${(answeredCount / questions.length) * 100}%` }} /></div>
+          {showPacingCues && (() => {
+            // Two adaptive pacing bars:
+            //  1) Per-question pace — where you should be on the current question vs how far the timer has run
+            //  2) Overall test pace — whether you're on track to finish before the time limit
+            const expectedQ = (idx + 1) / Math.max(1, questions.length); // 0..1
+            const elapsedFrac = Math.max(0, Math.min(1, sessionTime / currentLimit));
+            const qDiff = elapsedFrac - expectedQ; // >0 = behind on this question
+            const overallExpected = answeredCount / Math.max(1, questions.length);
+            const oDiff = elapsedFrac - overallExpected; // >0 = behind overall
+            const color = (d: number) =>
+              d > 0.05 ? "bg-destructive" : d < -0.05 ? "bg-warning" : "bg-success";
+            const Bar = ({ label, frac, marker, diff }: { label: string; frac: number; marker: number; diff: number }) => (
+              <div className="px-5 py-1.5">
+                <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                  <span>{label}</span>
+                  <span className={diff > 0.05 ? "text-destructive" : diff < -0.05 ? "text-warning" : "text-success"}>
+                    {diff > 0.05 ? "Behind pace" : diff < -0.05 ? "Ahead of pace" : "On pace"}
+                  </span>
+                </div>
+                <div className="relative h-1.5 rounded bg-muted overflow-hidden">
+                  <div className={`h-full ${color(diff)} transition-all`} style={{ width: `${Math.min(100, frac * 100)}%` }} />
+                  <div className="absolute top-0 bottom-0 w-0.5 bg-foreground/70" style={{ left: `${Math.min(100, Math.max(0, marker * 100))}%` }} />
+                </div>
+              </div>
+            );
+            return (
+              <div className="max-w-3xl mx-auto">
+                <Bar label="This-question pace" frac={elapsedFrac} marker={expectedQ} diff={qDiff} />
+                <Bar label="Overall test pace" frac={elapsedFrac} marker={overallExpected} diff={oDiff} />
+              </div>
+            );
+          })()}
         </header>
 
         <div className="flex-1 flex items-start justify-center px-5 py-10">
@@ -834,6 +894,10 @@ const TestSession = () => {
       <ChoiceEliminator
         open={!!elimPicker}
         choiceLetter={elimPicker ? String.fromCharCode(65 + elimPicker.choice) : ""}
+        subject={(() => {
+          const tq = elimPicker ? questions.find((qq) => qq.id === elimPicker.qid) : undefined;
+          return tq?.section === "Math" ? "math" : "ela";
+        })()}
         onCancel={() => setElimPicker(null)}
         onConfirm={(tag) => {
           if (!elimPicker) return;
