@@ -894,6 +894,10 @@ const TestSession = () => {
       <ChoiceEliminator
         open={!!elimPicker}
         choiceLetter={elimPicker ? String.fromCharCode(65 + elimPicker.choice) : ""}
+        subject={(() => {
+          const tq = elimPicker ? questions.find((qq) => qq.id === elimPicker.qid) : undefined;
+          return tq?.section === "Math" ? "math" : "ela";
+        })()}
         onCancel={() => setElimPicker(null)}
         onConfirm={(tag) => {
           if (!elimPicker) return;
