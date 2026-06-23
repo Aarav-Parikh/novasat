@@ -616,8 +616,40 @@ const TestSession = () => {
             )}
           </div>
 
-          {/* Answer Key with Math / ELA tabs */}
-          {(elaList.length > 0 || mathList.length > 0) && (
+          {/* Unified Post-Test Review Dashboard (Answer Key + AI tabs) */}
+          {m !== "review" && postReviewMissed !== null && (
+            <PostTestReview
+              missed={postReviewMissed}
+              answerKey={(() => {
+                const sortedMath = mathList.map((qq, i) => ({ qq, i }));
+                const sortedEla = elaList.map((qq, i) => ({ qq, i }));
+                return [...sortedMath, ...sortedEla].map(({ qq, i }) => {
+                  const ans = allAns[qq.id];
+                  const ok = isCorrectAnswer(qq, ans);
+                  const userText = qq.responseType === "spr"
+                    ? (ans !== undefined ? String(ans) : "—")
+                    : (typeof ans === "number" ? `${String.fromCharCode(65 + ans)}. ${qq.choices[ans]}` : "—");
+                  const correctText = qq.responseType === "spr"
+                    ? (qq.correctText ?? qq.choices[qq.correct])
+                    : `${String.fromCharCode(65 + qq.correct)}. ${qq.choices[qq.correct]}`;
+                  return {
+                    id: qq.id,
+                    index: i,
+                    section: qq.section,
+                    topic: qq.topic,
+                    difficulty: qq.difficulty,
+                    prompt: qq.prompt,
+                    userText,
+                    correctText,
+                    explanation: qq.explanation,
+                    ok,
+                  };
+                });
+              })()}
+            />
+          )}
+          {/* Fallback simple answer key for mistake-review mode */}
+          {m === "review" && (elaList.length > 0 || mathList.length > 0) && (
             <div className="mt-8">
               <h3 className="font-display text-2xl font-semibold mb-3">Answer Key</h3>
               <Tabs defaultValue={mathList.length >= elaList.length ? "math" : "ela"} className="w-full">
@@ -626,22 +658,13 @@ const TestSession = () => {
                   <TabsTrigger value="ela">ELA ({elaList.length})</TabsTrigger>
                 </TabsList>
                 <TabsContent value="math" className="mt-4 space-y-3">
-                  {mathList.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">No math questions in this session.</div>
-                  ) : mathList.map((qq, i) => renderRow(qq, i))}
+                  {mathList.length === 0 ? <div className="text-sm text-muted-foreground">No math questions.</div> : mathList.map((qq, i) => renderRow(qq, i))}
                 </TabsContent>
                 <TabsContent value="ela" className="mt-4 space-y-3">
-                  {elaList.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">No ELA questions in this session.</div>
-                  ) : elaList.map((qq, i) => renderRow(qq, i))}
+                  {elaList.length === 0 ? <div className="text-sm text-muted-foreground">No ELA questions.</div> : elaList.map((qq, i) => renderRow(qq, i))}
                 </TabsContent>
               </Tabs>
             </div>
-          )}
-
-          {/* Post-Test AI Review Dashboard (all modes except mistake-review) */}
-          {m !== "review" && postReviewMissed !== null && (
-            <PostTestReview missed={postReviewMissed} />
           )}
         </div>
       </div>
