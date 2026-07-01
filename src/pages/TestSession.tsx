@@ -108,6 +108,8 @@ const TestSession = () => {
   const [breakTick, setBreakTick] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [treatsEarned, setTreatsEarned] = useState(0);
+  const [donateOpen, setDonateOpen] = useState(false);
+  const [donateResult, setDonateResult] = useState<{ donated: number; petLevel: number; leveledUp: boolean } | null>(null);
   const [answerKey, setAnswerKey] = useState<{ questions: Question[]; answers: Record<string, AnswerValue> } | null>(null);
   const [moduleOneSnapshot, setModuleOneSnapshot] = useState<{ questions: Question[]; answers: Record<string, AnswerValue> } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
