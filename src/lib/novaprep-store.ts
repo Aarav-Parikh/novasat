@@ -112,6 +112,8 @@ interface Profile {
   equipped: Equipped;
   adaptive_pacing_enabled: boolean;
   full_sat_pacing_uses: number;
+  pet_xp: number;
+  pet_level: number;
 }
 
 export interface SessionSummary {
