@@ -152,6 +152,8 @@ export type Database = {
           login_count: number
           pet_energy: number
           pet_last_decay_at: string
+          pet_level: number
+          pet_xp: number
           review_prompt_dismissed: boolean
           sp: number
           streak: number
@@ -178,6 +180,8 @@ export type Database = {
           login_count?: number
           pet_energy?: number
           pet_last_decay_at?: string
+          pet_level?: number
+          pet_xp?: number
           review_prompt_dismissed?: boolean
           sp?: number
           streak?: number
@@ -204,6 +208,8 @@ export type Database = {
           login_count?: number
           pet_energy?: number
           pet_last_decay_at?: string
+          pet_level?: number
+          pet_xp?: number
           review_prompt_dismissed?: boolean
           sp?: number
           streak?: number
@@ -434,6 +440,7 @@ export type Database = {
       }
       buy_cosmetic: { Args: { _cosmetic_id: string }; Returns: Json }
       claim_daily_sp: { Args: never; Returns: Json }
+      donate_xp_to_pet: { Args: { _session_xp: number }; Returns: Json }
       equip_cosmetic: {
         Args: { _cosmetic_id: string; _slot: string }
         Returns: Json
@@ -449,6 +456,7 @@ export type Database = {
       increment_pacing_uses: { Args: never; Returns: number }
       mark_review_prompt_dismissed: { Args: never; Returns: undefined }
       mark_tutorial_completed: { Args: never; Returns: undefined }
+      pet_level_for_xp: { Args: { _xp: number }; Returns: number }
       record_login_and_get_onboarding: { Args: never; Returns: Json }
       record_session_rewards: {
         Args: {
