@@ -601,19 +601,9 @@ const TestSession = () => {
               </div>
             )}
 
-            {m === "math" ? (
-              <div className="mt-6 grid gap-2">
-                <button onClick={() => { window.location.href = "/test/reading"; }} className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-primary-foreground font-semibold">Continue to Reading & Writing</button>
-                <button onClick={() => nav("/app")} className="w-full px-4 py-2.5 rounded-lg border border-border bg-muted/30 text-sm">Back to dashboard</button>
-              </div>
-            ) : m === "reading" ? (
-              <div className="mt-6 grid gap-2">
-                <button onClick={() => { window.location.href = "/test/math"; }} className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-primary-foreground font-semibold">Continue to Math</button>
-                <button onClick={() => nav("/app")} className="w-full px-4 py-2.5 rounded-lg border border-border bg-muted/30 text-sm">Back to dashboard</button>
-              </div>
-            ) : (
-              <button onClick={() => nav("/app")} className="mt-6 inline-block w-full px-4 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-primary-foreground font-semibold">Return to Mission Control</button>
-            )}
+            <div className="mt-6 grid gap-2">
+              <button onClick={() => nav("/app")} className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-primary-foreground font-semibold">Return to Mission Control</button>
+            </div>
           </div>
 
           {/* Unified Post-Test Review Dashboard (Answer Key + AI tabs) */}
