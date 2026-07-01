@@ -939,4 +939,63 @@ const TestSession = () => {
   );
 };
 
+function DonateXpDialog({
+  open,
+  onOpenChange,
+  xpEarned,
+  result,
+  onDonate,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  xpEarned: number;
+  result: { donated: number; petLevel: number; leveledUp: boolean } | null;
+  onDonate: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const donatePreview = Math.max(1, Math.floor(xpEarned / 4));
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Share XP with Buddy?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {result ? (
+              <>
+                You donated <span className="text-foreground font-semibold">{result.donated} XP</span> to Buddy.
+                {result.leveledUp && <> Buddy leveled up to <span className="text-foreground font-semibold">Lv {result.petLevel}</span>!</>}
+              </>
+            ) : (
+              <>
+                You earned <span className="text-foreground font-semibold">{xpEarned} XP</span> this session. Give <span className="text-foreground font-semibold">25% ({donatePreview} XP)</span> to Buddy to help him level up? Higher-level Buddy grants bonus XP, SP, and treats when he's in the Energetic mood.
+              </>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          {result ? (
+            <AlertDialogAction onClick={() => onOpenChange(false)}>Great!</AlertDialogAction>
+          ) : (
+            <>
+              <AlertDialogCancel disabled={busy}>Keep all my XP</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={busy}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  setBusy(true);
+                  await onDonate();
+                  setBusy(false);
+                }}
+              >
+                {busy ? "Sending…" : `Donate ${donatePreview} XP`}
+              </AlertDialogAction>
+            </>
+          )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 export default TestSession;
+
