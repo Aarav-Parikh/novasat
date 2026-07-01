@@ -399,10 +399,12 @@ const TestSession = () => {
       if (taskLabel && dayLabel) await markTaskComplete({ taskKey: taskCompletionKey(dayLabel, taskLabel), taskLabel, dayLabel });
       // Re-sync profile from DB to ensure XP display is accurate everywhere
       await syncProfile();
+      // Offer to donate 25% of session XP to Buddy — only after successful sync
+      if (sessionXpEarned > 0) setDonateOpen(true);
     } catch (err: any) {
       // Don't bounce the user back on a sync hiccup — keep the results screen up.
       console.error("recordSession failed", err);
-      toast({ title: "Saved locally", description: "Your session XP is in — sync will retry on reload.", variant: "destructive" });
+      toast({ title: "Sync failed", description: err?.message ?? "Try reloading — session may not have saved.", variant: "destructive" });
     }
   };
 
