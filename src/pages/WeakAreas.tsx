@@ -70,7 +70,7 @@ const WeakAreas = () => {
         <span className="text-xs uppercase tracking-[0.25em] text-secondary">Diagnostic</span>
         <h1 className="font-display text-4xl font-bold mt-1">Weak Areas</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl">
-          Topics where your accuracy or pacing needs work. Practice fresh AI-generated questions on
+          Topics where your accuracy or pacing needs work. Practice fresh fresh questions on
           these skills — no memorization, no replays.
         </p>
       </div>

@@ -88,6 +88,27 @@ export const spMultiplierFromPet = (mood: PetMood) =>
 export const treatsFromCorrect = (correct: number) =>
   Math.floor(Math.max(0, correct) / 5);
 
+// Pet leveling: cumulative XP needed to reach level L = round(100 * L^1.6).
+export const petXpNeededForLevel = (level: number) => Math.round(100 * Math.pow(Math.max(1, level), 1.6));
+export const petLevelProgress = (petXp: number, petLevel: number) => {
+  const prevCap = petLevel <= 1 ? 0 : petXpNeededForLevel(petLevel - 1);
+  const nextCap = petXpNeededForLevel(petLevel);
+  const into = Math.max(0, petXp - prevCap);
+  const span = Math.max(1, nextCap - prevCap);
+  return { into, span, pct: Math.min(100, Math.round((into / span) * 100)), nextCap };
+};
+
+// Buffs granted by pet level when Buddy is Energetic (energy >= 75).
+export const petLevelBuffs = (level: number) => {
+  const buffs: string[] = [];
+  if (level >= 3) buffs.push("+5% XP");
+  if (level >= 5) buffs.push("+5% SP");
+  if (level >= 8) buffs.push("+1 treat / session");
+  if (level >= 12) buffs.push("+10% XP");
+  if (level >= 20) buffs.push("+15% XP · +10% SP");
+  return buffs;
+};
+
 // ---------- Profile / data shapes ----------
 
 export interface Equipped {
@@ -112,6 +133,8 @@ interface Profile {
   equipped: Equipped;
   adaptive_pacing_enabled: boolean;
   full_sat_pacing_uses: number;
+  pet_xp: number;
+  pet_level: number;
 }
 
 export interface SessionSummary {
@@ -221,6 +244,8 @@ const normalizeProfile = (raw: any): Profile | null => {
         : {},
     adaptive_pacing_enabled: raw.adaptive_pacing_enabled !== false,
     full_sat_pacing_uses: typeof raw.full_sat_pacing_uses === "number" ? raw.full_sat_pacing_uses : 0,
+    pet_xp: typeof raw.pet_xp === "number" ? raw.pet_xp : 0,
+    pet_level: typeof raw.pet_level === "number" ? raw.pet_level : 1,
   };
 };
 

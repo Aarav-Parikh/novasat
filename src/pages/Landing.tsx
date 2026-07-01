@@ -14,8 +14,8 @@ import petEnergetic from "@/assets/pet-energetic.png";
 const features = [
   {
     icon: Brain,
-    title: "Adaptive AI drills",
-    body: "Every question is generated and re-ranked to attack the gaps in your mastery map.",
+    title: "Adaptive drills",
+    body: "Every question is tuned to attack the gaps in your mastery map.",
   },
   {
     icon: Target,
@@ -178,7 +178,7 @@ export default function Landing() {
             {
               n: "02",
               t: "Train daily",
-              b: "Adaptive drills, short or full sims, and AI-graded review.",
+              b: "Adaptive drills, short or full sims, and detailed post-test review.",
             },
             {
               n: "03",

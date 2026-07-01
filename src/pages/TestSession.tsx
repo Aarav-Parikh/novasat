@@ -108,6 +108,8 @@ const TestSession = () => {
   const [breakTick, setBreakTick] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [treatsEarned, setTreatsEarned] = useState(0);
+  const [donateOpen, setDonateOpen] = useState(false);
+  const [donateResult, setDonateResult] = useState<{ donated: number; petLevel: number; leveledUp: boolean } | null>(null);
   const [answerKey, setAnswerKey] = useState<{ questions: Question[]; answers: Record<string, AnswerValue> } | null>(null);
   const [moduleOneSnapshot, setModuleOneSnapshot] = useState<{ questions: Question[]; answers: Record<string, AnswerValue> } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -131,6 +133,19 @@ const TestSession = () => {
       .replace(/\\n/g, "\n")
       .trim();
 
+  // Strip inline "(A) ..." style choices that the generator sometimes appends to the prompt.
+  // The four choices are shown separately below the prompt, so leaving them inline is redundant and confusing.
+  const stripInlineChoices = (prompt: string) => {
+    let out = prompt;
+    // Remove trailing "A) ... B) ... C) ... D) ..." (with or without parentheses, various dashes)
+    out = out.replace(/\s*(?:^|[\s\n])\(?\s*[A-D][\)\.\:]\s+.+?(?=(?:[\s\n]\(?\s*[A-D][\)\.\:]\s)|$)/gs, (m) =>
+      /^\s*\(?[A-D][\)\.\:]/.test(m) ? "" : m,
+    );
+    // Extra safety: remove any "A) foo  B) bar  C) baz  D) qux" block at the very end
+    out = out.replace(/(?:\s*\(?[A-D][\)\.\:]\s+[^\n]+){3,4}\s*$/g, "");
+    return out.trim();
+  };
+
   const stampTime = () => {
     const elapsed = Math.round((Date.now() - qStart) / 1000);
     const current = questions[idx];
@@ -142,6 +157,7 @@ const TestSession = () => {
     responseType: question.section === "Math" && question.responseType === "spr" ? "spr" : "multiple-choice",
     correct: Number.isInteger(question.correct) && question.correct >= 0 && question.correct <= 3 ? question.correct : 0,
     correctText: question.responseType === "spr" ? question.correctText : question.choices[question.correct] ?? question.correctText,
+    prompt: question.responseType === "spr" ? question.prompt : stripInlineChoices(question.prompt),
     explanation: cleanExplanation(question.explanation),
   })).filter((question) => question.responseType === "spr" || Boolean(question.choices[question.correct]));
 
@@ -383,10 +399,12 @@ const TestSession = () => {
       if (taskLabel && dayLabel) await markTaskComplete({ taskKey: taskCompletionKey(dayLabel, taskLabel), taskLabel, dayLabel });
       // Re-sync profile from DB to ensure XP display is accurate everywhere
       await syncProfile();
+      // Offer to donate 25% of session XP to Buddy — only after successful sync
+      if (sessionXpEarned > 0) setDonateOpen(true);
     } catch (err: any) {
       // Don't bounce the user back on a sync hiccup — keep the results screen up.
       console.error("recordSession failed", err);
-      toast({ title: "Saved locally", description: "Your session XP is in — sync will retry on reload.", variant: "destructive" });
+      toast({ title: "Sync failed", description: err?.message ?? "Try reloading — session may not have saved.", variant: "destructive" });
     }
   };
 
@@ -601,19 +619,9 @@ const TestSession = () => {
               </div>
             )}
 
-            {m === "math" ? (
-              <div className="mt-6 grid gap-2">
-                <button onClick={() => { window.location.href = "/test/reading"; }} className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-primary-foreground font-semibold">Continue to Reading & Writing</button>
-                <button onClick={() => nav("/app")} className="w-full px-4 py-2.5 rounded-lg border border-border bg-muted/30 text-sm">Back to dashboard</button>
-              </div>
-            ) : m === "reading" ? (
-              <div className="mt-6 grid gap-2">
-                <button onClick={() => { window.location.href = "/test/math"; }} className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-primary-foreground font-semibold">Continue to Math</button>
-                <button onClick={() => nav("/app")} className="w-full px-4 py-2.5 rounded-lg border border-border bg-muted/30 text-sm">Back to dashboard</button>
-              </div>
-            ) : (
-              <button onClick={() => nav("/app")} className="mt-6 inline-block w-full px-4 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-primary-foreground font-semibold">Return to Mission Control</button>
-            )}
+            <div className="mt-6 grid gap-2">
+              <button onClick={() => nav("/app")} className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-primary-foreground font-semibold">Return to Mission Control</button>
+            </div>
           </div>
 
           {/* Unified Post-Test Review Dashboard (Answer Key + AI tabs) */}
@@ -667,6 +675,25 @@ const TestSession = () => {
             </div>
           )}
         </div>
+        <DonateXpDialog
+          open={donateOpen}
+          onOpenChange={setDonateOpen}
+          xpEarned={xpEarned}
+          result={donateResult}
+          onDonate={async () => {
+            try {
+              const { data, error } = await supabase.rpc("donate_xp_to_pet" as any, { _session_xp: xpEarned });
+              if (error) throw error;
+              const d = (data ?? {}) as { ok?: boolean; donated?: number; pet_level?: number; leveled_up?: boolean };
+              if (d.ok) {
+                setDonateResult({ donated: d.donated ?? 0, petLevel: d.pet_level ?? 1, leveledUp: !!d.leveled_up });
+                await syncProfile();
+              }
+            } catch (e: any) {
+              toast({ title: "Donation failed", description: e?.message ?? "Try again from Buddy's page.", variant: "destructive" });
+            }
+          }}
+        />
       </div>
     );
   }
@@ -912,4 +939,63 @@ const TestSession = () => {
   );
 };
 
+function DonateXpDialog({
+  open,
+  onOpenChange,
+  xpEarned,
+  result,
+  onDonate,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  xpEarned: number;
+  result: { donated: number; petLevel: number; leveledUp: boolean } | null;
+  onDonate: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const donatePreview = Math.max(1, Math.floor(xpEarned / 4));
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Share XP with Buddy?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {result ? (
+              <>
+                You donated <span className="text-foreground font-semibold">{result.donated} XP</span> to Buddy.
+                {result.leveledUp && <> Buddy leveled up to <span className="text-foreground font-semibold">Lv {result.petLevel}</span>!</>}
+              </>
+            ) : (
+              <>
+                You earned <span className="text-foreground font-semibold">{xpEarned} XP</span> this session. Give <span className="text-foreground font-semibold">25% ({donatePreview} XP)</span> to Buddy to help him level up? Higher-level Buddy grants bonus XP, SP, and treats when he's in the Energetic mood.
+              </>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          {result ? (
+            <AlertDialogAction onClick={() => onOpenChange(false)}>Great!</AlertDialogAction>
+          ) : (
+            <>
+              <AlertDialogCancel disabled={busy}>Keep all my XP</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={busy}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  setBusy(true);
+                  await onDonate();
+                  setBusy(false);
+                }}
+              >
+                {busy ? "Sending…" : `Donate ${donatePreview} XP`}
+              </AlertDialogAction>
+            </>
+          )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 export default TestSession;
+

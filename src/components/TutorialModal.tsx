@@ -9,7 +9,7 @@ const slides = [
   },
   {
     title: "Dashboard = Mission Control",
-    body: "Every day starts here. See your streak, projected SAT range, weak-area count, and the AI-built routine for the day.",
+    body: "Every day starts here. See your streak, projected SAT range, weak-area count, and the custom routine for the day.",
   },
   {
     title: "Practice & Daily Plan",
@@ -20,8 +20,8 @@ const slides = [
     body: "Earn StudyPoints (SP) from drills and tests. Spend them in the Store on cosmetics for Buddy, your study companion.",
   },
   {
-    title: "AI Coach + Weak Areas",
-    body: "Read strategy articles in AI Coach for high-leverage tactics. Weak Areas tells you which topics to attack next — without spoiling specific questions.",
+    title: "Coach + Weak Areas",
+    body: "Read strategy articles in Coach for high-leverage tactics. Weak Areas tells you which topics to attack next — without spoiling specific questions.",
   },
   {
     title: "You're cleared for launch",
