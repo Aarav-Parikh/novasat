@@ -178,7 +178,7 @@ export default function Landing() {
             {
               n: "02",
               t: "Train daily",
-              b: "Adaptive drills, short or full sims, and AI-graded review.",
+              b: "Adaptive drills, short or full sims, and detailed post-test review.",
             },
             {
               n: "03",
