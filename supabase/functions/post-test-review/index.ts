@@ -1,5 +1,5 @@
-// Post-test review: produces AI flashcards, error categorization, and concept breakdowns
-// for missed questions. Uses Lovable AI Gateway.
+// Post-test review: produces AI flashcards, error categorization, per-question deep analysis,
+// and concept breakdowns for missed questions. Uses Lovable AI Gateway.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,37 +18,60 @@ type Missed = {
   eliminations?: Record<string, string>;
 };
 
-type ReviewPayload = {
-  missed: Missed[];
-};
+type ReviewPayload = { missed: Missed[] };
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = 55_000;
 
 function buildPrompt(missed: Missed[]) {
   const trimmed = missed.slice(0, 14).map((m, i) => ({
     n: i + 1,
+    question_id: m.question_id,
     section: m.section ?? "",
     topic: m.topic ?? "",
-    prompt: String(m.prompt ?? "").slice(0, 600),
-    user_answer: String(m.user_answer ?? "—").slice(0, 200),
-    correct_answer: String(m.correct_answer ?? "").slice(0, 200),
-    explanation: String(m.explanation ?? "").slice(0, 400),
+    prompt: String(m.prompt ?? "").slice(0, 900),
+    user_answer: String(m.user_answer ?? "—").slice(0, 240),
+    correct_answer: String(m.correct_answer ?? "").slice(0, 240),
+    explanation: String(m.explanation ?? "").slice(0, 500),
     flag: m.flag_category ?? null,
     eliminations: m.eliminations ?? {},
   }));
-  return `You are an SAT coach. Given the student's MISSED questions, produce a JSON object with EXACTLY this shape and NOTHING else:
+  return `You are an elite SAT tutor. For each MISSED question, produce a rich diagnostic. Return a single JSON object with this EXACT shape and NOTHING else:
+
 {
-  "flashcards": [ {"front": "concept question (<=110 chars)", "back": "concise rule/principle (<=240 chars)"} ],
-  "category_summary": [ {"category": "Concept Gap"|"Misreading"|"Time Pressure"|"Careless"|"Test Strategy", "count": number, "note": "1-sentence diagnostic"} ],
-  "concept_breakdowns": [ {"topic": "topic name", "what_to_study": "3-sentence breakdown", "drills": ["short prompt 1", "short prompt 2"]} ]
+  "flashcards": [
+    {
+      "front": "concept question (<=110 chars)",
+      "concept": "the exact concept/rule being tested (<=140 chars)",
+      "full_explanation": "3-5 sentence explanation of the rule/principle in student-friendly language",
+      "worked_example": "one concrete worked example showing the rule in action (<=280 chars)",
+      "common_pitfalls": "1-2 sentences on the most common wrong reasoning",
+      "memory_hook": "a short mnemonic, phrase, or visual to help remember (<=120 chars)"
+    }
+  ],
+  "category_summary": [
+    { "category": "Concept Gap"|"Misreading"|"Time Pressure"|"Careless"|"Test Strategy", "count": number, "note": "1-sentence diagnostic" }
+  ],
+  "concept_breakdowns": [
+    { "topic": "topic name", "what_to_study": "3-sentence breakdown of the concept, pitfalls, and how it shows up on the SAT", "drills": ["short prompt 1", "short prompt 2"] }
+  ],
+  "answer_insights": [
+    {
+      "question_id": "matches input question_id",
+      "why_correct": "2-3 sentences explaining precisely WHY the correct answer is right",
+      "why_user_wrong": "2-3 sentences explaining specifically why the user's chosen answer is wrong (or 'Skipped/blank' if empty)",
+      "distractor_traps": "1-3 sentences on which of the other choices are the closest/most tempting and the specific trap type (e.g., swapped variable, opposite tone, out-of-scope, off-by-one, verb tense mismatch)",
+      "fix_it_tip": "1-2 sentence actionable strategy to avoid this mistake next time"
+    }
+  ]
 }
+
 Rules:
-- 1 flashcard per missed question, max 12 total. Front = a concept stub the student should know; back = the rule/principle (not the question's specific answer).
-- category_summary: include only categories that apply, sum of counts <= total missed. Use the student's flag_category and eliminations as signals.
-- concept_breakdowns: 1 per UNIQUE topic, max 6. what_to_study must be 3 plain sentences explaining the concept, common pitfalls, and how to recognize it on the SAT.
+- 1 flashcard per unique concept in the missed set, max 10.
+- answer_insights: one entry per missed question, keyed by the input question_id. Do NOT invent question_ids.
 - Use real Unicode math (√ π ² ³ ≤ ≥), never LaTeX. No markdown. No prose outside the JSON.
+- Be blunt about what tempting answers look like — students learn from concrete trap-spotting.
 
 MISSED QUESTIONS:
 ${JSON.stringify(trimmed)}`;
@@ -69,6 +92,7 @@ Deno.serve(async (req) => {
         flashcards: [],
         category_summary: [],
         concept_breakdowns: [],
+        answer_insights: [],
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -130,6 +154,7 @@ Deno.serve(async (req) => {
       flashcards: Array.isArray(parsed.flashcards) ? parsed.flashcards.slice(0, 12) : [],
       category_summary: Array.isArray(parsed.category_summary) ? parsed.category_summary.slice(0, 6) : [],
       concept_breakdowns: Array.isArray(parsed.concept_breakdowns) ? parsed.concept_breakdowns.slice(0, 6) : [],
+      answer_insights: Array.isArray(parsed.answer_insights) ? parsed.answer_insights.slice(0, 20) : [],
     };
     return new Response(JSON.stringify(out), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
