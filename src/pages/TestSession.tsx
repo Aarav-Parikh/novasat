@@ -675,6 +675,25 @@ const TestSession = () => {
             </div>
           )}
         </div>
+        <DonateXpDialog
+          open={donateOpen}
+          onOpenChange={setDonateOpen}
+          xpEarned={xpEarned}
+          result={donateResult}
+          onDonate={async () => {
+            try {
+              const { data, error } = await supabase.rpc("donate_xp_to_pet" as any, { _session_xp: xpEarned });
+              if (error) throw error;
+              const d = (data ?? {}) as { ok?: boolean; donated?: number; pet_level?: number; leveled_up?: boolean };
+              if (d.ok) {
+                setDonateResult({ donated: d.donated ?? 0, petLevel: d.pet_level ?? 1, leveledUp: !!d.leveled_up });
+                await syncProfile();
+              }
+            } catch (e: any) {
+              toast({ title: "Donation failed", description: e?.message ?? "Try again from Buddy's page.", variant: "destructive" });
+            }
+          }}
+        />
       </div>
     );
   }
