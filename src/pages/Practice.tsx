@@ -81,7 +81,7 @@ const Practice = () => {
       id: "redemption",
       icon: Zap,
       title: "Weak-Skill Arena",
-      desc: `Fresh AI-generated questions tuned to ${weakTopic}. Pure practice — no replays.`,
+      desc: `Fresh questions tuned to ${weakTopic}. Pure practice — no replays.`,
       cta: "Enter Arena",
       duration: "18 min",
       route: `/test/redemption?topic=${encodeURIComponent(weakTopic)}`,
