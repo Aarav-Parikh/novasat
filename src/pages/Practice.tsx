@@ -94,7 +94,7 @@ const Practice = () => {
         <span className="text-xs uppercase tracking-[0.25em] text-secondary">Practice & Coach</span>
         <h1 className="font-display text-4xl font-bold mt-1">Choose Your Mission</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl">
-          Every session uses original AI-generated content. Pacing is tracked silently in the
+          Every session serves fresh, original content. Pacing is tracked silently in the
           background; results feed your Flight Plan and the Coach's recommendations.
         </p>
       </div>
