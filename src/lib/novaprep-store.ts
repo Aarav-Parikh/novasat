@@ -223,6 +223,8 @@ const normalizeProfile = (raw: any): Profile | null => {
         : {},
     adaptive_pacing_enabled: raw.adaptive_pacing_enabled !== false,
     full_sat_pacing_uses: typeof raw.full_sat_pacing_uses === "number" ? raw.full_sat_pacing_uses : 0,
+    pet_xp: typeof raw.pet_xp === "number" ? raw.pet_xp : 0,
+    pet_level: typeof raw.pet_level === "number" ? raw.pet_level : 1,
   };
 };
 
