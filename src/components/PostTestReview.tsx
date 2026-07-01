@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Brain, Sparkles, ChartBar, BookOpen, Loader as Loader2, RefreshCw, KeyRound, CircleCheck as CheckCircle2, Circle as XCircle } from "lucide-react";
+import { Brain, Sparkles, ChartBar, BookOpen, Loader as Loader2, RefreshCw, KeyRound, CircleCheck as CheckCircle2, Circle as XCircle, Lightbulb } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export interface MissedQuestion {
@@ -28,10 +28,30 @@ export interface AnswerKeyRow {
   ok: boolean;
 }
 
+interface Flashcard {
+  front: string;
+  concept?: string;
+  full_explanation?: string;
+  worked_example?: string;
+  common_pitfalls?: string;
+  memory_hook?: string;
+  // legacy back field
+  back?: string;
+}
+
+interface AnswerInsight {
+  question_id: string;
+  why_correct?: string;
+  why_user_wrong?: string;
+  distractor_traps?: string;
+  fix_it_tip?: string;
+}
+
 interface ReviewData {
-  flashcards: { front: string; back: string }[];
+  flashcards: Flashcard[];
   category_summary: { category: string; count: number; note: string }[];
   concept_breakdowns: { topic: string; what_to_study: string; drills: string[] }[];
+  answer_insights: AnswerInsight[];
 }
 
 interface Props {
@@ -60,29 +80,70 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
 
   useEffect(() => { fetchReview(); /* eslint-disable-next-line */ }, []);
 
+  const insightsById = useMemo(() => {
+    const map = new Map<string, AnswerInsight>();
+    (data?.answer_insights ?? []).forEach((ins) => map.set(ins.question_id, ins));
+    return map;
+  }, [data]);
+
   const mathKey = answerKey.filter((r) => r.section === "Math");
   const elaKey = answerKey.filter((r) => r.section === "Reading & Writing");
 
-  const renderAnswerRow = (r: AnswerKeyRow) => (
-    <div key={r.id} className={`glass p-4 border ${r.ok ? "border-success/30" : "border-destructive/30"}`}>
-      <div className="flex items-start gap-3">
-        {r.ok ? <CheckCircle2 className="h-5 w-5 text-success shrink-0 mt-0.5" /> : <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />}
-        <div className="flex-1 min-w-0">
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Q{r.index + 1} · {r.topic} · <span className="capitalize">{r.difficulty}</span></div>
-          <div className="text-sm mt-1 font-medium whitespace-pre-wrap">{r.prompt}</div>
-          <div className="mt-2 grid sm:grid-cols-2 gap-2 text-xs">
-            <div className={`rounded border px-2 py-1.5 ${r.ok ? "border-success/30 bg-success/5" : "border-destructive/30 bg-destructive/5"}`}>
-              <span className="text-muted-foreground">Your answer: </span>{r.userText}
+  const renderAnswerRow = (r: AnswerKeyRow) => {
+    const ins = insightsById.get(r.id);
+    return (
+      <div key={r.id} className={`glass p-4 border ${r.ok ? "border-success/30" : "border-destructive/30"}`}>
+        <div className="flex items-start gap-3">
+          {r.ok ? <CheckCircle2 className="h-5 w-5 text-success shrink-0 mt-0.5" /> : <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />}
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Q{r.index + 1} · {r.topic} · <span className="capitalize">{r.difficulty}</span></div>
+            <div className="text-sm mt-1 font-medium whitespace-pre-wrap">{r.prompt}</div>
+            <div className="mt-2 grid sm:grid-cols-2 gap-2 text-xs">
+              <div className={`rounded border px-2 py-1.5 ${r.ok ? "border-success/30 bg-success/5" : "border-destructive/30 bg-destructive/5"}`}>
+                <span className="text-muted-foreground">Your answer: </span>{r.userText}
+              </div>
+              <div className="rounded border border-success/30 bg-success/5 px-2 py-1.5">
+                <span className="text-muted-foreground">Correct: </span>{r.correctText}
+              </div>
             </div>
-            <div className="rounded border border-success/30 bg-success/5 px-2 py-1.5">
-              <span className="text-muted-foreground">Correct: </span>{r.correctText}
-            </div>
+            {r.explanation && <p className="mt-2 text-xs text-muted-foreground">{r.explanation}</p>}
+
+            {/* Richer AI insight for wrong answers */}
+            {!r.ok && ins && (
+              <div className="mt-3 space-y-2 rounded-lg border border-secondary/30 bg-secondary/5 p-3">
+                {ins.why_correct && (
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-success">Why the correct answer is right</div>
+                    <div className="text-xs mt-1 text-foreground/90 leading-relaxed">{ins.why_correct}</div>
+                  </div>
+                )}
+                {ins.why_user_wrong && (
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-destructive">Why your answer missed</div>
+                    <div className="text-xs mt-1 text-foreground/90 leading-relaxed">{ins.why_user_wrong}</div>
+                  </div>
+                )}
+                {ins.distractor_traps && (
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-warning">Trap breakdown</div>
+                    <div className="text-xs mt-1 text-foreground/90 leading-relaxed">{ins.distractor_traps}</div>
+                  </div>
+                )}
+                {ins.fix_it_tip && (
+                  <div className="flex items-start gap-2 pt-1 border-t border-border/60">
+                    <Lightbulb className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
+                    <div className="text-xs text-foreground/90 leading-relaxed"><span className="font-semibold">Next time:</span> {ins.fix_it_tip}</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          {r.explanation && <p className="mt-2 text-xs text-muted-foreground">{r.explanation}</p>}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  const currentCard = data?.flashcards?.[cardIdx];
 
   return (
     <div className="mt-8 space-y-5">
@@ -90,7 +151,7 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
         <h3 className="font-display text-2xl font-semibold flex items-center gap-2"><Brain className="h-5 w-5 text-secondary" /> Post-Test Review Dashboard</h3>
         {data && !loading && (
           <button onClick={fetchReview} className="text-xs inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
-            <RefreshCw className="h-3.5 w-3.5" /> Regenerate AI
+            <RefreshCw className="h-3.5 w-3.5" /> Regenerate
           </button>
         )}
       </div>
@@ -121,6 +182,11 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
               </TabsContent>
             </Tabs>
           )}
+          {loading && (
+            <div className="mt-3 text-xs text-muted-foreground inline-flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading detailed AI breakdown for each wrong answer…
+            </div>
+          )}
         </TabsContent>
 
         {/* Flashcards */}
@@ -136,7 +202,7 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
             </div>
           ) : error ? (
             <div className="glass p-5 border border-destructive/40 text-sm text-destructive">{error}</div>
-          ) : data && data.flashcards.length > 0 ? (
+          ) : data && data.flashcards.length > 0 && currentCard ? (
             <div className="glass p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs text-muted-foreground">Tap card to flip</div>
@@ -144,33 +210,69 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
               </div>
               <div
                 onClick={() => setFlipped((f) => !f)}
-                className="w-full min-h-[180px] cursor-pointer select-none"
+                className="w-full min-h-[320px] cursor-pointer select-none"
                 style={{ perspective: "1200px" }}
               >
                 <div
-                  className="relative w-full min-h-[180px] transition-transform duration-500"
+                  className="relative w-full min-h-[320px] transition-transform duration-500"
                   style={{
                     transformStyle: "preserve-3d",
                     transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
                   }}
                 >
+                  {/* Front */}
                   <div
-                    className="absolute inset-0 rounded-xl border border-border bg-muted/20 p-5"
+                    className="absolute inset-0 rounded-xl border border-border bg-muted/20 p-6 flex flex-col justify-center"
                     style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
                   >
-                    <div className="text-[10px] uppercase tracking-widest text-secondary mb-2">Front · concept</div>
-                    <div className="text-sm leading-relaxed">{data.flashcards[cardIdx].front}</div>
+                    <div className="text-[10px] uppercase tracking-widest text-secondary mb-3">Front · concept prompt</div>
+                    <div className="text-base leading-relaxed font-medium">{currentCard.front}</div>
+                    <div className="mt-6 text-[10px] uppercase tracking-widest text-muted-foreground">Tap to reveal the full breakdown →</div>
                   </div>
+                  {/* Back */}
                   <div
-                    className="absolute inset-0 rounded-xl border border-secondary/40 bg-secondary/5 p-5"
+                    className="absolute inset-0 rounded-xl border border-secondary/40 bg-secondary/5 p-5 overflow-y-auto"
                     style={{
                       backfaceVisibility: "hidden",
                       WebkitBackfaceVisibility: "hidden",
                       transform: "rotateY(180deg)",
                     }}
                   >
-                    <div className="text-[10px] uppercase tracking-widest text-secondary mb-2">Back · rule</div>
-                    <div className="text-sm leading-relaxed">{data.flashcards[cardIdx].back}</div>
+                    <div className="text-[10px] uppercase tracking-widest text-secondary mb-2">Back · deep dive</div>
+                    {currentCard.concept && (
+                      <div className="mb-3">
+                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Concept</div>
+                        <div className="text-sm font-semibold leading-snug">{currentCard.concept}</div>
+                      </div>
+                    )}
+                    {currentCard.full_explanation && (
+                      <div className="mb-3">
+                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Explanation</div>
+                        <div className="text-xs leading-relaxed">{currentCard.full_explanation}</div>
+                      </div>
+                    )}
+                    {currentCard.worked_example && (
+                      <div className="mb-3">
+                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Worked example</div>
+                        <div className="text-xs leading-relaxed font-mono bg-background/40 rounded px-2 py-1.5 border border-border/60">{currentCard.worked_example}</div>
+                      </div>
+                    )}
+                    {currentCard.common_pitfalls && (
+                      <div className="mb-3">
+                        <div className="text-[10px] uppercase tracking-widest text-destructive">Common pitfalls</div>
+                        <div className="text-xs leading-relaxed">{currentCard.common_pitfalls}</div>
+                      </div>
+                    )}
+                    {currentCard.memory_hook && (
+                      <div className="flex items-start gap-2 mt-3 pt-2 border-t border-border/60">
+                        <Lightbulb className="h-3.5 w-3.5 text-secondary shrink-0 mt-0.5" />
+                        <div className="text-xs italic">{currentCard.memory_hook}</div>
+                      </div>
+                    )}
+                    {/* Legacy fallback */}
+                    {!currentCard.full_explanation && currentCard.back && (
+                      <div className="text-sm leading-relaxed">{currentCard.back}</div>
+                    )}
                   </div>
                 </div>
               </div>
