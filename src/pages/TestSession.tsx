@@ -131,6 +131,19 @@ const TestSession = () => {
       .replace(/\\n/g, "\n")
       .trim();
 
+  // Strip inline "(A) ..." style choices that the generator sometimes appends to the prompt.
+  // The four choices are shown separately below the prompt, so leaving them inline is redundant and confusing.
+  const stripInlineChoices = (prompt: string) => {
+    let out = prompt;
+    // Remove trailing "A) ... B) ... C) ... D) ..." (with or without parentheses, various dashes)
+    out = out.replace(/\s*(?:^|[\s\n])\(?\s*[A-D][\)\.\:]\s+.+?(?=(?:[\s\n]\(?\s*[A-D][\)\.\:]\s)|$)/gs, (m) =>
+      /^\s*\(?[A-D][\)\.\:]/.test(m) ? "" : m,
+    );
+    // Extra safety: remove any "A) foo  B) bar  C) baz  D) qux" block at the very end
+    out = out.replace(/(?:\s*\(?[A-D][\)\.\:]\s+[^\n]+){3,4}\s*$/g, "");
+    return out.trim();
+  };
+
   const stampTime = () => {
     const elapsed = Math.round((Date.now() - qStart) / 1000);
     const current = questions[idx];
@@ -142,6 +155,7 @@ const TestSession = () => {
     responseType: question.section === "Math" && question.responseType === "spr" ? "spr" : "multiple-choice",
     correct: Number.isInteger(question.correct) && question.correct >= 0 && question.correct <= 3 ? question.correct : 0,
     correctText: question.responseType === "spr" ? question.correctText : question.choices[question.correct] ?? question.correctText,
+    prompt: question.responseType === "spr" ? question.prompt : stripInlineChoices(question.prompt),
     explanation: cleanExplanation(question.explanation),
   })).filter((question) => question.responseType === "spr" || Boolean(question.choices[question.correct]));
 
