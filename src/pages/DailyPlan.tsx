@@ -37,7 +37,7 @@ const DailyPlan = () => {
       <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <span className="text-xs uppercase tracking-[0.25em] text-secondary">
-            AI Daily Plan
+            Daily Plan
           </span>
           <h1 className="font-display text-4xl font-bold mt-1">{routine.headline}</h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">{routine.subline}</p>

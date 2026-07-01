@@ -1,4 +1,4 @@
-// Generates today's AI-recommended practice plan from the user's weak skills.
+// Generates today's custom practice plan from the user's weak skills.
 // No multi-day flight plan; just a focused daily routine.
 import { MistakeRecord } from "./novaprep-data";
 import { SessionSummary } from "./novaprep-store";
