@@ -12,6 +12,8 @@ import {
   CosmeticSlot,
   PetMood,
   formatBuff,
+  petLevelProgress,
+  petLevelBuffs,
 } from "@/lib/novaprep-store";
 import { toast } from "@/hooks/use-toast";
 import { generateQuestions } from "@/lib/generate-questions";
