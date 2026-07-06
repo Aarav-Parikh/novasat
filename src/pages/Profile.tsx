@@ -127,6 +127,9 @@ const Profile = () => {
           </div>
         </GlassCard>
 
+        <ShareLinkPanel />
+
+
         <GlassCard>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-2xl font-semibold">Badges</h2>
