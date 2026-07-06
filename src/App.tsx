@@ -55,7 +55,6 @@ const App = () => (
               <Route path="/clubs" element={<RequireAuth><Clubs /></RequireAuth>} />
               <Route path="/clubs/:slug" element={<RequireAuth><ClubDetail /></RequireAuth>} />
               <Route path="/duel/:id" element={<RequireAuth><Duel /></RequireAuth>} />
-              <Route path="/app" element={<RequireAuth><Index /></RequireAuth>} />
               <Route path="/practice" element={<RequireAuth><Practice /></RequireAuth>} />
               <Route path="/plan" element={<RequireAuth><DailyPlan /></RequireAuth>} />
               <Route path="/articles" element={<RequireAuth><Articles /></RequireAuth>} />
