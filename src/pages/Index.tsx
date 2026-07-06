@@ -18,6 +18,8 @@ import {
   routeForDailyTask,
 } from "@/lib/daily-recommendations";
 import { deriveNovaStats } from "@/lib/novaprep-stats";
+import { computeReadiness } from "@/lib/readiness";
+import { ReadinessCard } from "@/components/ReadinessCard";
 
 const Dashboard = () => {
   const profile = useNova((s) => s.profile);
