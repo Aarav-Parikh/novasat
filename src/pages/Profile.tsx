@@ -7,6 +7,7 @@ import { useNova } from "@/lib/novaprep-store";
 import { rankFromXP } from "@/lib/novaprep-data";
 import { deriveNovaStats } from "@/lib/novaprep-stats";
 import { toast } from "@/hooks/use-toast";
+import { ShareLinkPanel } from "@/components/ShareLinkPanel";
 
 const badgeCatalog = [
   // Practice volume
