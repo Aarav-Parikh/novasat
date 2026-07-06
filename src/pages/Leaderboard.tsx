@@ -13,10 +13,11 @@ export default function Leaderboard() {
 
   useEffect(() => {
     setLoading(true);
-    supabase
-      .rpc("leaderboard_top", { _scope: scope, _limit: 50 })
-      .then(({ data }) => setRows((data as Row[]) ?? []))
-      .finally(() => setLoading(false));
+    (async () => {
+      const { data } = await supabase.rpc("leaderboard_top", { _scope: scope, _limit: 50 });
+      setRows((data as Row[]) ?? []);
+      setLoading(false);
+    })();
   }, [scope]);
 
   return (
