@@ -34,6 +34,10 @@ const Dashboard = () => {
     () => deriveNovaStats(sessions, mistakes, xp, profile?.target_score),
     [sessions, mistakes, xp, profile?.target_score],
   );
+  const readiness = useMemo(
+    () => computeReadiness(sessions, mistakes, xp, profile?.target_score, profile?.test_date),
+    [sessions, mistakes, xp, profile?.target_score, profile?.test_date],
+  );
 
   const projected = stats.projectedScore;
   const targetSuffix = profile?.target_score ? ` / ${profile.target_score}` : "";
