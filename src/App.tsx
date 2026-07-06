@@ -26,6 +26,12 @@ import Articles from "./pages/Articles.tsx";
 import Help from "./pages/Help.tsx";
 import AdminUsers from "./pages/admin/Users.tsx";
 import AdminReviews from "./pages/admin/Reviews.tsx";
+import Leaderboard from "./pages/Leaderboard.tsx";
+import Friends from "./pages/Friends.tsx";
+import Clubs from "./pages/Clubs.tsx";
+import ClubDetail from "./pages/ClubDetail.tsx";
+import Duel from "./pages/Duel.tsx";
+import PublicShare from "./pages/PublicShare.tsx";
 
 const queryClient = new QueryClient();
 
@@ -42,7 +48,13 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/share/:slug" element={<PublicShare />} />
               <Route path="/app" element={<RequireAuth><Index /></RequireAuth>} />
+              <Route path="/leaderboard" element={<RequireAuth><Leaderboard /></RequireAuth>} />
+              <Route path="/friends" element={<RequireAuth><Friends /></RequireAuth>} />
+              <Route path="/clubs" element={<RequireAuth><Clubs /></RequireAuth>} />
+              <Route path="/clubs/:slug" element={<RequireAuth><ClubDetail /></RequireAuth>} />
+              <Route path="/duel/:id" element={<RequireAuth><Duel /></RequireAuth>} />
               <Route path="/practice" element={<RequireAuth><Practice /></RequireAuth>} />
               <Route path="/plan" element={<RequireAuth><DailyPlan /></RequireAuth>} />
               <Route path="/articles" element={<RequireAuth><Articles /></RequireAuth>} />

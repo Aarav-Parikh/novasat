@@ -7,6 +7,7 @@ import { useNova } from "@/lib/novaprep-store";
 import { rankFromXP } from "@/lib/novaprep-data";
 import { deriveNovaStats } from "@/lib/novaprep-stats";
 import { toast } from "@/hooks/use-toast";
+import { ShareLinkPanel } from "@/components/ShareLinkPanel";
 
 const badgeCatalog = [
   // Practice volume
@@ -126,6 +127,9 @@ const Profile = () => {
             <Link to="/help" className="inline-flex px-4 py-2 rounded-lg bg-muted border border-border text-sm font-medium">Help & tour</Link>
           </div>
         </GlassCard>
+
+        <ShareLinkPanel />
+
 
         <GlassCard>
           <div className="flex items-center justify-between mb-4">

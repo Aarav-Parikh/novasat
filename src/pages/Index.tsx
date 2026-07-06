@@ -18,6 +18,8 @@ import {
   routeForDailyTask,
 } from "@/lib/daily-recommendations";
 import { deriveNovaStats } from "@/lib/novaprep-stats";
+import { computeReadiness } from "@/lib/readiness";
+import { ReadinessCard } from "@/components/ReadinessCard";
 
 const Dashboard = () => {
   const profile = useNova((s) => s.profile);
@@ -31,6 +33,10 @@ const Dashboard = () => {
   const stats = useMemo(
     () => deriveNovaStats(sessions, mistakes, xp, profile?.target_score),
     [sessions, mistakes, xp, profile?.target_score],
+  );
+  const readiness = useMemo(
+    () => computeReadiness(sessions, mistakes, xp, profile?.target_score, profile?.test_date),
+    [sessions, mistakes, xp, profile?.target_score, profile?.test_date],
   );
 
   const projected = stats.projectedScore;
@@ -83,6 +89,12 @@ const Dashboard = () => {
           <div className="mt-2 font-display text-3xl font-bold">{xp.toLocaleString()}</div>
         </GlassCard>
       </div>
+
+      <div className="mb-6">
+        <ReadinessCard readiness={readiness} />
+      </div>
+
+
 
       <div className="grid xl:grid-cols-[1.45fr_0.85fr] gap-6 items-start">
         <GlassCard variant="purple" className="lg:col-span-2">
