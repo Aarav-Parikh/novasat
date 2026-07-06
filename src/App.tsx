@@ -48,6 +48,13 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/share/:slug" element={<PublicShare />} />
+              <Route path="/app" element={<RequireAuth><Index /></RequireAuth>} />
+              <Route path="/leaderboard" element={<RequireAuth><Leaderboard /></RequireAuth>} />
+              <Route path="/friends" element={<RequireAuth><Friends /></RequireAuth>} />
+              <Route path="/clubs" element={<RequireAuth><Clubs /></RequireAuth>} />
+              <Route path="/clubs/:slug" element={<RequireAuth><ClubDetail /></RequireAuth>} />
+              <Route path="/duel/:id" element={<RequireAuth><Duel /></RequireAuth>} />
               <Route path="/app" element={<RequireAuth><Index /></RequireAuth>} />
               <Route path="/practice" element={<RequireAuth><Practice /></RequireAuth>} />
               <Route path="/plan" element={<RequireAuth><DailyPlan /></RequireAuth>} />
