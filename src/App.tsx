@@ -26,6 +26,12 @@ import Articles from "./pages/Articles.tsx";
 import Help from "./pages/Help.tsx";
 import AdminUsers from "./pages/admin/Users.tsx";
 import AdminReviews from "./pages/admin/Reviews.tsx";
+import Leaderboard from "./pages/Leaderboard.tsx";
+import Friends from "./pages/Friends.tsx";
+import Clubs from "./pages/Clubs.tsx";
+import ClubDetail from "./pages/ClubDetail.tsx";
+import Duel from "./pages/Duel.tsx";
+import PublicShare from "./pages/PublicShare.tsx";
 
 const queryClient = new QueryClient();
 
