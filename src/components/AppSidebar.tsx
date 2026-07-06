@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Target,
   CalendarDays,
-  Sparkles,
   TrendingDown,
   BarChart3,
   UserCircle,
@@ -15,6 +14,9 @@ import {
   MessageSquareQuote,
   PawPrint,
   LogOut,
+  Trophy,
+  Users,
+  Users2,
 } from "lucide-react";
 import { useNova } from "@/lib/novaprep-store";
 import { rankFromXP } from "@/lib/novaprep-data";
@@ -28,6 +30,9 @@ const items = [
   { to: "/articles", label: "Articles", icon: BookOpen },
   { to: "/weak-areas", label: "Weak Areas", icon: TrendingDown },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
+  { to: "/friends", label: "Friends", icon: Users },
+  { to: "/clubs", label: "Clubs", icon: Users2 },
   { to: "/pet", label: "Pet", icon: PawPrint },
   { to: "/store", label: "Store", icon: ShoppingBag },
   { to: "/help", label: "Help", icon: HelpCircle },
