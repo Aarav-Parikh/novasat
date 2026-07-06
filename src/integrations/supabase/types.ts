@@ -35,6 +35,175 @@ export type Database = {
         }
         Relationships: []
       }
+      club_members: {
+        Row: {
+          club_id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          club_id: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          club_id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_members_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clubs: {
+        Row: {
+          created_at: string
+          id: string
+          join_code: string
+          name: string
+          owner_id: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          join_code: string
+          name: string
+          owner_id: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          join_code?: string
+          name?: string
+          owner_id?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      duel_answers: {
+        Row: {
+          correct: boolean
+          created_at: string
+          duel_id: string
+          id: string
+          q_index: number
+          time_ms: number
+          user_id: string
+        }
+        Insert: {
+          correct: boolean
+          created_at?: string
+          duel_id: string
+          id?: string
+          q_index: number
+          time_ms?: number
+          user_id: string
+        }
+        Update: {
+          correct?: boolean
+          created_at?: string
+          duel_id?: string
+          id?: string
+          q_index?: number
+          time_ms?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "duel_answers_duel_id_fkey"
+            columns: ["duel_id"]
+            isOneToOne: false
+            referencedRelation: "duels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      duels: {
+        Row: {
+          challenger_correct: number
+          challenger_id: string
+          challenger_time_ms: number
+          created_at: string
+          finalized_at: string | null
+          id: string
+          opponent_correct: number
+          opponent_id: string
+          opponent_time_ms: number
+          questions: Json
+          section: string
+          started_at: string | null
+          status: string
+          winner_id: string | null
+        }
+        Insert: {
+          challenger_correct?: number
+          challenger_id: string
+          challenger_time_ms?: number
+          created_at?: string
+          finalized_at?: string | null
+          id?: string
+          opponent_correct?: number
+          opponent_id: string
+          opponent_time_ms?: number
+          questions?: Json
+          section: string
+          started_at?: string | null
+          status?: string
+          winner_id?: string | null
+        }
+        Update: {
+          challenger_correct?: number
+          challenger_id?: string
+          challenger_time_ms?: number
+          created_at?: string
+          finalized_at?: string | null
+          id?: string
+          opponent_correct?: number
+          opponent_id?: string
+          opponent_time_ms?: number
+          questions?: Json
+          section?: string
+          started_at?: string | null
+          status?: string
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
+      friendships: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       mistakes: {
         Row: {
           choices: Json
@@ -157,6 +326,7 @@ export type Database = {
           review_prompt_dismissed: boolean
           sp: number
           streak: number
+          streak_freezes: number
           target_score: number | null
           test_date: string | null
           treats: number
@@ -185,6 +355,7 @@ export type Database = {
           review_prompt_dismissed?: boolean
           sp?: number
           streak?: number
+          streak_freezes?: number
           target_score?: number | null
           test_date?: string | null
           treats?: number
@@ -213,6 +384,7 @@ export type Database = {
           review_prompt_dismissed?: boolean
           sp?: number
           streak?: number
+          streak_freezes?: number
           target_score?: number | null
           test_date?: string | null
           treats?: number
@@ -220,6 +392,33 @@ export type Database = {
           updated_at?: string
           xp?: number
           xp_boost_until?: string | null
+        }
+        Relationships: []
+      }
+      progress_shares: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          revoked_at: string | null
+          slug: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          revoked_at?: string | null
+          slug: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          revoked_at?: string | null
+          slug?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -440,12 +639,33 @@ export type Database = {
       }
       buy_cosmetic: { Args: { _cosmetic_id: string }; Returns: Json }
       claim_daily_sp: { Args: never; Returns: Json }
+      club_leaderboard: {
+        Args: { _club_id: string }
+        Returns: {
+          display_name: string
+          streak: number
+          user_id: string
+          weekly_xp: number
+        }[]
+      }
+      create_club: { Args: { _name: string }; Returns: Json }
+      create_duel: {
+        Args: {
+          _opponent_display_name: string
+          _questions: Json
+          _section: string
+        }
+        Returns: Json
+      }
+      create_share_link: { Args: never; Returns: Json }
       donate_xp_to_pet: { Args: { _session_xp: number }; Returns: Json }
       equip_cosmetic: {
         Args: { _cosmetic_id: string; _slot: string }
         Returns: Json
       }
       feed_pet: { Args: { _treats: number }; Returns: Json }
+      finalize_duel: { Args: { _duel_id: string }; Returns: Json }
+      get_public_progress: { Args: { _slug: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -454,6 +674,33 @@ export type Database = {
         Returns: boolean
       }
       increment_pacing_uses: { Args: never; Returns: number }
+      is_club_member: {
+        Args: { _club_id: string; _user_id: string }
+        Returns: boolean
+      }
+      join_club: { Args: { _join_code: string }; Returns: Json }
+      leaderboard_top: {
+        Args: { _limit?: number; _scope: string }
+        Returns: {
+          display_name: string
+          streak: number
+          user_id: string
+          weekly_xp: number
+        }[]
+      }
+      list_friends: {
+        Args: never
+        Returns: {
+          direction: string
+          display_name: string
+          friend_id: string
+          friendship_id: string
+          status: string
+          streak: number
+          weekly_xp: number
+          xp: number
+        }[]
+      }
       mark_review_prompt_dismissed: { Args: never; Returns: undefined }
       mark_tutorial_completed: { Args: never; Returns: undefined }
       pet_level_for_xp: { Args: { _xp: number }; Returns: number }
@@ -468,7 +715,23 @@ export type Database = {
         }
         Returns: Json
       }
+      respond_friend_request: {
+        Args: { _accept: boolean; _id: string }
+        Returns: Json
+      }
+      revoke_share_link: { Args: { _id: string }; Returns: Json }
+      send_friend_request: { Args: { _display_name: string }; Returns: Json }
+      submit_duel_answer: {
+        Args: {
+          _correct: boolean
+          _duel_id: string
+          _q_index: number
+          _time_ms: number
+        }
+        Returns: Json
+      }
       sync_pet_decay: { Args: never; Returns: Json }
+      use_streak_freeze: { Args: never; Returns: Json }
       wake_up_pet: { Args: { _score: number; _total: number }; Returns: Json }
     }
     Enums: {
