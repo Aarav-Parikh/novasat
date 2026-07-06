@@ -90,6 +90,12 @@ const Dashboard = () => {
         </GlassCard>
       </div>
 
+      <div className="mb-6">
+        <ReadinessCard readiness={readiness} />
+      </div>
+
+
+
       <div className="grid xl:grid-cols-[1.45fr_0.85fr] gap-6 items-start">
         <GlassCard variant="purple" className="lg:col-span-2">
           <div className="flex items-start justify-between gap-4 mb-4">
