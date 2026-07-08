@@ -20,6 +20,7 @@ import {
 import { deriveNovaStats } from "@/lib/novaprep-stats";
 import { computeReadiness } from "@/lib/readiness";
 import { ReadinessCard } from "@/components/ReadinessCard";
+import { CramWidget } from "@/components/CramWidget";
 
 const Dashboard = () => {
   const profile = useNova((s) => s.profile);
@@ -90,9 +91,11 @@ const Dashboard = () => {
         </GlassCard>
       </div>
 
-      <div className="mb-6">
+      <div className="grid lg:grid-cols-[1.35fr_1fr] gap-6 mb-8 items-start">
         <ReadinessCard readiness={readiness} />
+        <CramWidget mistakes={mistakes} testDate={profile?.test_date} />
       </div>
+
 
 
 
