@@ -298,43 +298,6 @@ const Pet = () => {
             </div>
           </div>
 
-          {/* Buddy level progression */}
-          {(() => {
-            const petLevel = profile?.pet_level ?? 1;
-            const petXp = profile?.pet_xp ?? 0;
-            const prog = petLevelProgress(petXp, petLevel);
-            const buffs = petLevelBuffs(petLevel);
-            const buffsActive = mood === "energetic";
-            return (
-              <div className="mt-5 rounded-xl border border-secondary/30 bg-secondary/5 p-4">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-xs uppercase tracking-widest text-secondary">Buddy Level</span>
-                  <span className="font-mono text-lg font-bold">Lv {petLevel}</span>
-                </div>
-                <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-secondary to-primary" style={{ width: `${prog.pct}%` }} />
-                </div>
-                <div className="mt-1 flex justify-between text-[10px] font-mono text-muted-foreground">
-                  <span>{prog.into} XP</span><span>{prog.span} to Lv {petLevel + 1}</span>
-                </div>
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  Buddy earns XP when you donate 25% at the end of a session. Buddy's XP is separate from yours.
-                </p>
-                {buffs.length > 0 && (
-                  <div className="mt-3">
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">
-                      Level buffs {buffsActive ? "· active" : "· need Energetic mood"}
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {buffs.map((b) => (
-                        <span key={b} className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${buffsActive ? "border-success/50 bg-success/10 text-success" : "border-border bg-muted/40 text-muted-foreground"}`}>{b}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
 
           <div className="mt-5 rounded-xl border border-border bg-background/40 p-4">
             <h3 className="font-display text-lg font-semibold">
