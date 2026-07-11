@@ -305,8 +305,33 @@ export type Database = {
           },
         ]
       }
+      parent_links: {
+        Row: {
+          created_at: string
+          id: string
+          parent_id: string
+          status: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          parent_id: string
+          status?: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parent_id?: string
+          status?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          account_type: Database["public"]["Enums"]["account_type"]
           active_boosts: Json
           adaptive_pacing_enabled: boolean
           cosmetics: Json
@@ -336,6 +361,7 @@ export type Database = {
           xp_boost_until: string | null
         }
         Insert: {
+          account_type?: Database["public"]["Enums"]["account_type"]
           active_boosts?: Json
           adaptive_pacing_enabled?: boolean
           cosmetics?: Json
@@ -365,6 +391,7 @@ export type Database = {
           xp_boost_until?: string | null
         }
         Update: {
+          account_type?: Database["public"]["Enums"]["account_type"]
           active_boosts?: Json
           adaptive_pacing_enabled?: boolean
           cosmetics?: Json
@@ -418,6 +445,33 @@ export type Database = {
           is_active?: boolean
           revoked_at?: string | null
           slug?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quest_claims: {
+        Row: {
+          claimed_at: string
+          id: string
+          period_key: string
+          quest_key: string
+          reward_sp: number
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: string
+          period_key: string
+          quest_key: string
+          reward_sp: number
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: string
+          period_key?: string
+          quest_key?: string
+          reward_sp?: number
           user_id?: string
         }
         Relationships: []
@@ -639,6 +693,7 @@ export type Database = {
       }
       buy_cosmetic: { Args: { _cosmetic_id: string }; Returns: Json }
       claim_daily_sp: { Args: never; Returns: Json }
+      claim_quest: { Args: { _quest_key: string }; Returns: Json }
       club_leaderboard: {
         Args: { _club_id: string }
         Returns: {
@@ -701,8 +756,23 @@ export type Database = {
           xp: number
         }[]
       }
+      list_parent_links: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          parent_id: string
+          parent_name: string
+          status: string
+          student_email: string
+          student_id: string
+          student_name: string
+        }[]
+      }
+      list_quests: { Args: never; Returns: Json }
       mark_review_prompt_dismissed: { Args: never; Returns: undefined }
       mark_tutorial_completed: { Args: never; Returns: undefined }
+      parent_child_progress: { Args: { _student_id: string }; Returns: Json }
       pet_level_for_xp: { Args: { _xp: number }; Returns: number }
       record_login_and_get_onboarding: { Args: never; Returns: Json }
       record_session_rewards: {
@@ -715,12 +785,18 @@ export type Database = {
         }
         Returns: Json
       }
+      request_parent_link: { Args: { _child_email: string }; Returns: Json }
       respond_friend_request: {
+        Args: { _accept: boolean; _id: string }
+        Returns: Json
+      }
+      respond_parent_link: {
         Args: { _accept: boolean; _id: string }
         Returns: Json
       }
       revoke_share_link: { Args: { _id: string }; Returns: Json }
       send_friend_request: { Args: { _display_name: string }; Returns: Json }
+      send_friend_request_by_email: { Args: { _email: string }; Returns: Json }
       submit_duel_answer: {
         Args: {
           _correct: boolean
@@ -730,11 +806,21 @@ export type Database = {
         }
         Returns: Json
       }
+      suggested_users: {
+        Args: { _limit?: number }
+        Returns: {
+          display_name: string
+          streak: number
+          user_id: string
+          xp: number
+        }[]
+      }
       sync_pet_decay: { Args: never; Returns: Json }
       use_streak_freeze: { Args: never; Returns: Json }
       wake_up_pet: { Args: { _score: number; _total: number }; Returns: Json }
     }
     Enums: {
+      account_type: "student" | "parent"
       app_role: "admin" | "user"
       box_tier: "common" | "rare" | "epic" | "legendary"
     }
@@ -864,6 +950,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: ["student", "parent"],
       app_role: ["admin", "user"],
       box_tier: ["common", "rare", "epic", "legendary"],
     },
