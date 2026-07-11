@@ -247,6 +247,7 @@ const normalizeProfile = (raw: any): Profile | null => {
     full_sat_pacing_uses: typeof raw.full_sat_pacing_uses === "number" ? raw.full_sat_pacing_uses : 0,
     pet_xp: typeof raw.pet_xp === "number" ? raw.pet_xp : 0,
     pet_level: typeof raw.pet_level === "number" ? raw.pet_level : 1,
+    account_type: raw.account_type === "parent" ? "parent" : "student",
   };
 };
 
