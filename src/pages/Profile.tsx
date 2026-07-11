@@ -7,7 +7,7 @@ import { useNova } from "@/lib/novaprep-store";
 import { rankFromXP } from "@/lib/novaprep-data";
 import { deriveNovaStats } from "@/lib/novaprep-stats";
 import { toast } from "@/hooks/use-toast";
-import { ShareLinkPanel } from "@/components/ShareLinkPanel";
+import { ParentRequestsPanel } from "@/components/ParentRequestsPanel";
 
 const badgeCatalog = [
   // Practice volume
@@ -128,7 +128,7 @@ const Profile = () => {
           </div>
         </GlassCard>
 
-        <ShareLinkPanel />
+        <ParentRequestsPanel />
 
 
         <GlassCard>

@@ -131,34 +131,39 @@ const Auth = () => {
           <form onSubmit={submit} className="space-y-3">
             {mode === "signup" && (
               <>
-                <Field label="Display name">
+                <Field label="Account type">
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["student", "parent"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setAccountType(t)}
+                        className={`px-3 py-2 rounded-lg border text-sm capitalize ${accountType === t ? "border-primary bg-primary/15 text-foreground" : "border-border bg-background/40 text-muted-foreground"}`}
+                      >
+                        {t === "student" ? "Student (prepping for SAT)" : "Parent (oversee child)"}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+                <Field label="Username">
                   <input
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Cadet Nova"
+                    placeholder="cadetnova"
+                    required
                     className={inputClass}
                   />
                 </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Target score">
-                    <input
-                      type="number"
-                      min={400}
-                      max={1600}
-                      value={targetScore}
-                      onChange={(e) => setTargetScore(e.target.value)}
-                      className={inputClass}
-                    />
-                  </Field>
-                  <Field label="Test date">
-                    <input
-                      type="date"
-                      value={testDate}
-                      onChange={(e) => setTestDate(e.target.value)}
-                      className={inputClass}
-                    />
-                  </Field>
-                </div>
+                {accountType === "student" && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Target score">
+                      <input type="number" min={400} max={1600} value={targetScore} onChange={(e) => setTargetScore(e.target.value)} className={inputClass} />
+                    </Field>
+                    <Field label="Test date">
+                      <input type="date" value={testDate} onChange={(e) => setTestDate(e.target.value)} className={inputClass} />
+                    </Field>
+                  </div>
+                )}
               </>
             )}
             <Field label="Email">
