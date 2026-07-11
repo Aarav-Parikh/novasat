@@ -6,9 +6,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RequireAuth } from "@/components/RequireAuth";
 import { RequireAdmin } from "@/components/RequireAdmin";
+import { RequireStudent } from "@/components/RequireStudent";
 import { DataBootstrap } from "@/components/DataBootstrap";
 import { OnboardingGate } from "@/components/OnboardingGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { BadgeWatcher } from "@/components/BadgeWatcher";
 import Index from "./pages/Index.tsx";
 import Landing from "./pages/Landing.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -28,10 +30,8 @@ import AdminUsers from "./pages/admin/Users.tsx";
 import AdminReviews from "./pages/admin/Reviews.tsx";
 import Leaderboard from "./pages/Leaderboard.tsx";
 import Friends from "./pages/Friends.tsx";
-import Clubs from "./pages/Clubs.tsx";
-import ClubDetail from "./pages/ClubDetail.tsx";
-import Duel from "./pages/Duel.tsx";
-import PublicShare from "./pages/PublicShare.tsx";
+import Quests from "./pages/Quests.tsx";
+import ParentHome from "./pages/ParentHome.tsx";
 
 const queryClient = new QueryClient();
 
@@ -45,31 +45,33 @@ const App = () => (
           <AuthProvider>
             <DataBootstrap />
             <OnboardingGate />
+            <BadgeWatcher />
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/share/:slug" element={<PublicShare />} />
-              <Route path="/app" element={<RequireAuth><Index /></RequireAuth>} />
+              <Route path="/app" element={<RequireAuth><RequireStudent><Index /></RequireStudent></RequireAuth>} />
+              <Route path="/parent" element={<RequireAuth><ParentHome /></RequireAuth>} />
               <Route path="/leaderboard" element={<RequireAuth><Leaderboard /></RequireAuth>} />
-              <Route path="/friends" element={<RequireAuth><Friends /></RequireAuth>} />
-              <Route path="/clubs" element={<RequireAuth><Clubs /></RequireAuth>} />
-              <Route path="/clubs/:slug" element={<RequireAuth><ClubDetail /></RequireAuth>} />
-              <Route path="/duel/:id" element={<RequireAuth><Duel /></RequireAuth>} />
-              <Route path="/practice" element={<RequireAuth><Practice /></RequireAuth>} />
-              <Route path="/plan" element={<RequireAuth><DailyPlan /></RequireAuth>} />
+              <Route path="/friends" element={<RequireAuth><RequireStudent><Friends /></RequireStudent></RequireAuth>} />
+              <Route path="/quests" element={<RequireAuth><RequireStudent><Quests /></RequireStudent></RequireAuth>} />
+              <Route path="/practice" element={<RequireAuth><RequireStudent><Practice /></RequireStudent></RequireAuth>} />
+              <Route path="/plan" element={<RequireAuth><RequireStudent><DailyPlan /></RequireStudent></RequireAuth>} />
               <Route path="/articles" element={<RequireAuth><Articles /></RequireAuth>} />
-              {/* AI Coach merged into Practice */}
               <Route path="/coach" element={<Navigate to="/practice" replace />} />
               <Route path="/coach/:slug" element={<RequireAuth><CoachArticle /></RequireAuth>} />
-              <Route path="/weak-areas" element={<RequireAuth><WeakAreas /></RequireAuth>} />
+              <Route path="/weak-areas" element={<RequireAuth><RequireStudent><WeakAreas /></RequireStudent></RequireAuth>} />
               <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
               <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-              <Route path="/pet" element={<RequireAuth><Pet /></RequireAuth>} />
-              <Route path="/store" element={<RequireAuth><Store /></RequireAuth>} />
+              <Route path="/pet" element={<RequireAuth><RequireStudent><Pet /></RequireStudent></RequireAuth>} />
+              <Route path="/store" element={<RequireAuth><RequireStudent><Store /></RequireStudent></RequireAuth>} />
               <Route path="/help" element={<RequireAuth><Help /></RequireAuth>} />
               <Route path="/admin/users" element={<RequireAuth><RequireAdmin><AdminUsers /></RequireAdmin></RequireAuth>} />
               <Route path="/admin/reviews" element={<RequireAuth><RequireAdmin><AdminReviews /></RequireAdmin></RequireAuth>} />
-              <Route path="/test/:mode" element={<RequireAuth><TestSession /></RequireAuth>} />
+              <Route path="/test/:mode" element={<RequireAuth><RequireStudent><TestSession /></RequireStudent></RequireAuth>} />
+              <Route path="/clubs" element={<Navigate to="/quests" replace />} />
+              <Route path="/clubs/:slug" element={<Navigate to="/quests" replace />} />
+              <Route path="/share/:slug" element={<Navigate to="/" replace />} />
+              <Route path="/duel/:id" element={<Navigate to="/friends" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
