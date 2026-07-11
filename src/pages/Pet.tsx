@@ -175,7 +175,8 @@ const Pet = () => {
       </div>
 
       <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-6 items-start">
-        {/* LEFT: Treats inventory */}
+        {/* LEFT: Treats + Buddy level */}
+        <div className="space-y-6">
         <GlassCard variant="cyan" className="!p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
