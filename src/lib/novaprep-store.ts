@@ -135,6 +135,7 @@ interface Profile {
   full_sat_pacing_uses: number;
   pet_xp: number;
   pet_level: number;
+  account_type: "student" | "parent";
 }
 
 export interface SessionSummary {
