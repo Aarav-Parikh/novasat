@@ -90,61 +90,11 @@ const Store = () => {
         <div className="flex items-center gap-2 text-secondary text-xs uppercase tracking-[0.25em]">
           <Coins className="h-3.5 w-3.5" /> Earn SP
         </div>
-        <h2 className="font-display text-2xl font-semibold mt-2">Ways to stack SP</h2>
-        <div className="mt-5 grid md:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-border bg-background/40 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">Daily login bonus</span>
-              <span className="font-mono text-secondary">+25 SP</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Claim once every 24 hours.
-            </p>
-            <button
-              onClick={onClaimDaily}
-              disabled={claimedToday}
-              className="mt-3 w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {claimedToday ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4" /> Claimed
-                </>
-              ) : (
-                <>Claim 25 SP</>
-              )}
-            </button>
-          </div>
-          <div className="rounded-xl border border-border bg-background/40 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">Complete drills</span>
-              <span className="font-mono text-secondary">+5 SP</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Each finished session pays out. Keep Buddy energetic for a 1.2× bonus.
-            </p>
-            <a
-              href="/practice"
-              className="mt-3 block w-full text-center rounded-lg border border-secondary/40 px-3 py-2 text-sm font-semibold text-secondary hover:bg-secondary/10"
-            >
-              Go to Practice
-            </a>
-          </div>
-          <div className="rounded-xl border border-border bg-background/40 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">Feed your pet</span>
-              <span className="font-mono text-secondary">1.2× SP</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Energetic mood (75%+) activates a 20% SP multiplier on everything.
-            </p>
-            <a
-              href="/pet"
-              className="mt-3 block w-full text-center rounded-lg border border-secondary/40 px-3 py-2 text-sm font-semibold text-secondary hover:bg-secondary/10 inline-flex items-center justify-center gap-2"
-            >
-              <PawPrint className="h-4 w-4" /> Visit Buddy
-            </a>
-          </div>
-        </div>
+        <h2 className="font-display text-2xl font-semibold mt-2">Head to Quests</h2>
+        <p className="text-sm text-muted-foreground mt-2">Daily and weekly quests are the fastest way to earn SP — including your daily login bonus.</p>
+        <a href="/quests" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-2 text-sm font-semibold text-primary-foreground">
+          Open Quests
+        </a>
       </GlassCard>
 
       {slots.map((slot) => {

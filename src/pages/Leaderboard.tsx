@@ -55,7 +55,7 @@ export default function Leaderboard() {
                   {i + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{r.display_name || "Anonymous"}</div>
+                  <div className="font-medium truncate">{r.display_name?.trim() || "Cadet"}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-2">
                     <Flame className="h-3 w-3 text-warning" /> {r.streak} day streak
                   </div>

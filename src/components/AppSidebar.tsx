@@ -16,14 +16,15 @@ import {
   LogOut,
   Trophy,
   Users,
-  Users2,
+  Sparkles,
+  Eye,
 } from "lucide-react";
 import { useNova } from "@/lib/novaprep-store";
 import { rankFromXP } from "@/lib/novaprep-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
-const items = [
+const studentItems = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard },
   { to: "/practice", label: "Practice", icon: Target },
   { to: "/plan", label: "Daily Plan", icon: CalendarDays },
@@ -32,11 +33,17 @@ const items = [
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/friends", label: "Friends", icon: Users },
-  { to: "/clubs", label: "Clubs", icon: Users2 },
+  { to: "/quests", label: "Quests", icon: Sparkles },
   { to: "/pet", label: "Pet", icon: PawPrint },
   { to: "/store", label: "Store", icon: ShoppingBag },
   { to: "/help", label: "Help", icon: HelpCircle },
   { to: "/profile", label: "Profile", icon: UserCircle },
+];
+
+const parentItems = [
+  { to: "/parent", label: "Overview", icon: Eye },
+  { to: "/profile", label: "Profile", icon: UserCircle },
+  { to: "/help", label: "Help", icon: HelpCircle },
 ];
 
 const adminItems = [
@@ -50,6 +57,8 @@ export function AppSidebar() {
   const { isAdmin } = useIsAdmin();
   const xp = profile?.xp ?? 0;
   const info = rankFromXP(xp);
+  const isParent = profile?.account_type === "parent";
+  const items = isParent ? parentItems : studentItems;
   const pct =
     info.ceiling === info.floor
       ? 100

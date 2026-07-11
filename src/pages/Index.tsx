@@ -40,7 +40,7 @@ const Dashboard = () => {
     [sessions, mistakes, xp, profile?.target_score, profile?.test_date],
   );
 
-  const projected = stats.projectedScore;
+  const projectedRange = stats.projectedRange;
   const targetSuffix = profile?.target_score ? ` / ${profile.target_score}` : "";
 
   return (
@@ -71,7 +71,7 @@ const Dashboard = () => {
             <TrendingUp className="h-3.5 w-3.5 text-success" />
             Projected{targetSuffix}
           </div>
-          <div className="mt-2 font-display text-3xl font-bold">{projected}</div>
+          <div className="mt-2 font-display text-2xl font-bold tabular-nums">{projectedRange}</div>
         </GlassCard>
         <GlassCard className="!p-5">
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
