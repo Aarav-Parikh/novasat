@@ -32,6 +32,7 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState("");
   const [targetScore, setTargetScore] = useState("1500");
   const [testDate, setTestDate] = useState("");
+  const [accountType, setAccountType] = useState<"student" | "parent">("student");
   const [busy, setBusy] = useState(false);
   const slogan = useMemo(() => SLOGANS[Math.floor(Math.random() * SLOGANS.length)], []);
 
@@ -48,6 +49,10 @@ const Auth = () => {
     e.preventDefault();
     localStorage.removeItem(GOOGLE_PENDING_KEY);
     localStorage.removeItem(GOOGLE_ERROR_KEY);
+    if (mode === "signup" && !displayName.trim()) {
+      toast({ title: "Username required", description: "Pick a username so friends can find you.", variant: "destructive" });
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "signup") {
@@ -57,18 +62,32 @@ const Auth = () => {
             password,
             options: {
               emailRedirectTo: window.location.origin,
-              data: { display_name: displayName || email.split("@")[0] },
+              data: {
+                display_name: displayName.trim(),
+                account_type: accountType,
+              },
             },
           }),
         );
         if (error) throw error;
+        // Email confirmation is required — no session is returned until they click the link.
+        if (!data.session) {
+          toast({
+            title: "Confirm your email",
+            description: `We sent a confirmation link to ${email}. Click it, then sign in.`,
+          });
+          setMode("signin");
+          setPassword("");
+          return;
+        }
+        // (Fallback if auto-confirm happens to be on)
         if (data.user) {
           await supabase
             .from("profiles")
             .update({
-              display_name: displayName || email.split("@")[0],
-              target_score: targetScore ? parseInt(targetScore) : null,
-              test_date: testDate || null,
+              display_name: displayName.trim(),
+              target_score: accountType === "student" && targetScore ? parseInt(targetScore) : null,
+              test_date: accountType === "student" && testDate ? testDate : null,
             })
             .eq("id", data.user.id);
         }
