@@ -136,6 +136,7 @@ interface Profile {
   pet_xp: number;
   pet_level: number;
   account_type: "student" | "parent";
+  avatar_url: string | null;
 }
 
 export interface SessionSummary {
@@ -182,7 +183,7 @@ interface NovaState {
   completeFocusTimer: () => Promise<number>;
   loadAll: (userId: string) => Promise<void>;
   updateProfile: (
-    patch: Partial<Pick<Profile, "display_name" | "target_score" | "test_date" | "adaptive_pacing_enabled">>,
+    patch: Partial<Pick<Profile, "display_name" | "target_score" | "test_date" | "adaptive_pacing_enabled" | "avatar_url">>,
   ) => Promise<void>;
   markTaskComplete: (task: {
     taskKey: string;
@@ -248,6 +249,7 @@ const normalizeProfile = (raw: any): Profile | null => {
     pet_xp: typeof raw.pet_xp === "number" ? raw.pet_xp : 0,
     pet_level: typeof raw.pet_level === "number" ? raw.pet_level : 1,
     account_type: raw.account_type === "parent" ? "parent" : "student",
+    avatar_url: raw.avatar_url ?? null,
   };
 };
 
