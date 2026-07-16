@@ -118,8 +118,8 @@ const Practice = () => {
                 </>
               )}
             </p>
-            <Link to="/articles" className="mt-3 inline-flex items-center gap-1 text-sm text-secondary hover:text-secondary-glow">
-              Browse the article library <ChevronRight className="h-4 w-4" />
+            <Link to="/weak-areas" className="mt-3 inline-flex items-center gap-1 text-sm text-secondary hover:text-secondary-glow">
+              Review your weak areas <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
