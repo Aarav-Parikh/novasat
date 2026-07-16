@@ -77,8 +77,12 @@ const Profile = () => {
       <div className="grid xl:grid-cols-[0.95fr_1.35fr] gap-6 items-start">
         <GlassCard variant="purple" className="overflow-hidden">
           <div className="flex items-center gap-5">
-            <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-3xl font-display font-bold glow-purple text-primary-foreground">
-              {initials || <UserCircle className="h-12 w-12" />}
+            <div className="relative">
+              <Avatar name={profile?.display_name} url={profile?.avatar_url} size={96} className="!h-24 !w-24 text-2xl glow-purple" />
+              <label className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer border-2 border-background hover:bg-primary/90 transition" title="Upload avatar">
+                <UserCircle className="h-4 w-4" />
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+              </label>
             </div>
             <div>
               <span className="text-xs uppercase tracking-[0.25em] text-secondary">Profile</span>
@@ -126,12 +130,9 @@ const Profile = () => {
           <div className="mt-5 flex flex-wrap gap-2">
             <Link to="/pet" className="inline-flex px-4 py-2 rounded-lg bg-muted border border-border text-sm font-medium">Visit Buddy</Link>
             <Link to="/store" className="inline-flex px-4 py-2 rounded-lg bg-muted border border-border text-sm font-medium">Open Store</Link>
-            <Link to="/help" className="inline-flex px-4 py-2 rounded-lg bg-muted border border-border text-sm font-medium">Help & tour</Link>
+            <Link to="/updates" className="inline-flex px-4 py-2 rounded-lg bg-muted border border-border text-sm font-medium">What's new</Link>
           </div>
         </GlassCard>
-
-        <ParentRequestsPanel />
-
 
         <GlassCard>
           <div className="flex items-center justify-between mb-4">
