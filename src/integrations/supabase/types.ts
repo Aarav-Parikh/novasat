@@ -334,6 +334,7 @@ export type Database = {
           account_type: Database["public"]["Enums"]["account_type"]
           active_boosts: Json
           adaptive_pacing_enabled: boolean
+          avatar_url: string | null
           cosmetics: Json
           created_at: string
           display_name: string | null
@@ -364,6 +365,7 @@ export type Database = {
           account_type?: Database["public"]["Enums"]["account_type"]
           active_boosts?: Json
           adaptive_pacing_enabled?: boolean
+          avatar_url?: string | null
           cosmetics?: Json
           created_at?: string
           display_name?: string | null
@@ -394,6 +396,7 @@ export type Database = {
           account_type?: Database["public"]["Enums"]["account_type"]
           active_boosts?: Json
           adaptive_pacing_enabled?: boolean
+          avatar_url?: string | null
           cosmetics?: Json
           created_at?: string
           display_name?: string | null
@@ -676,12 +679,15 @@ export type Database = {
       admin_user_summary: {
         Args: never
         Returns: {
+          avatar_url: string
           created_at: string
           display_name: string
           email: string
           focus_minutes_total: number
           last_login_at: string
           login_count: number
+          session_minutes: number
+          sessions_count: number
           streak: number
           user_id: string
           xp: number
@@ -692,6 +698,7 @@ export type Database = {
         Returns: number
       }
       buy_cosmetic: { Args: { _cosmetic_id: string }; Returns: Json }
+      cancel_friend_request: { Args: { _id: string }; Returns: Json }
       claim_daily_sp: { Args: never; Returns: Json }
       claim_quest: { Args: { _quest_key: string }; Returns: Json }
       club_leaderboard: {
@@ -737,6 +744,7 @@ export type Database = {
       leaderboard_top: {
         Args: { _limit?: number; _scope: string }
         Returns: {
+          avatar_url: string
           display_name: string
           streak: number
           user_id: string
@@ -746,6 +754,7 @@ export type Database = {
       list_friends: {
         Args: never
         Returns: {
+          avatar_url: string
           direction: string
           display_name: string
           friend_id: string
@@ -809,6 +818,7 @@ export type Database = {
       suggested_users: {
         Args: { _limit?: number }
         Returns: {
+          avatar_url: string
           display_name: string
           streak: number
           user_id: string

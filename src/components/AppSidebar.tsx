@@ -7,9 +7,7 @@ import {
   BarChart3,
   UserCircle,
   ShoppingBag,
-  BookOpen,
   Rocket,
-  HelpCircle,
   ShieldCheck,
   MessageSquareQuote,
   PawPrint,
@@ -17,18 +15,18 @@ import {
   Trophy,
   Users,
   Sparkles,
-  Eye,
+  History,
 } from "lucide-react";
 import { useNova } from "@/lib/novaprep-store";
 import { rankFromXP } from "@/lib/novaprep-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { Avatar } from "@/components/Avatar";
 
-const studentItems = [
+const items = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard },
   { to: "/practice", label: "Practice", icon: Target },
   { to: "/plan", label: "Daily Plan", icon: CalendarDays },
-  { to: "/articles", label: "Articles", icon: BookOpen },
   { to: "/weak-areas", label: "Weak Areas", icon: TrendingDown },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
@@ -36,14 +34,8 @@ const studentItems = [
   { to: "/quests", label: "Quests", icon: Sparkles },
   { to: "/pet", label: "Pet", icon: PawPrint },
   { to: "/store", label: "Store", icon: ShoppingBag },
-  { to: "/help", label: "Help", icon: HelpCircle },
+  { to: "/updates", label: "What's New", icon: History },
   { to: "/profile", label: "Profile", icon: UserCircle },
-];
-
-const parentItems = [
-  { to: "/parent", label: "Overview", icon: Eye },
-  { to: "/profile", label: "Profile", icon: UserCircle },
-  { to: "/help", label: "Help", icon: HelpCircle },
 ];
 
 const adminItems = [
@@ -57,8 +49,6 @@ export function AppSidebar() {
   const { isAdmin } = useIsAdmin();
   const xp = profile?.xp ?? 0;
   const info = rankFromXP(xp);
-  const isParent = profile?.account_type === "parent";
-  const items = isParent ? parentItems : studentItems;
   const pct =
     info.ceiling === info.floor
       ? 100
@@ -66,7 +56,7 @@ export function AppSidebar() {
 
   return (
     <aside className="hidden md:flex w-64 shrink-0 flex-col bg-sidebar/60 backdrop-blur-xl border-r border-sidebar-border relative z-10 sticky top-0 h-screen self-start">
-      <div className="px-6 pt-6 pb-8">
+      <div className="px-6 pt-6 pb-6">
         <div className="flex items-center gap-2.5">
           <div className="relative h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-[var(--glow-purple)]">
             <Rocket className="h-5 w-5 text-white" />
@@ -76,6 +66,16 @@ export function AppSidebar() {
             <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-1">
               Adaptive · SAT
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 pb-4">
+        <div className="flex items-center gap-3 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/40 p-3">
+          <Avatar name={profile?.display_name} url={profile?.avatar_url} size={40} />
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-sm truncate">{profile?.display_name || "Cadet"}</div>
+            <div className="text-[11px] text-muted-foreground truncate">{info.rank}</div>
           </div>
         </div>
       </div>
