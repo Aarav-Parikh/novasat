@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { checkEmailDeliverable } from "@/lib/email-validator";
 import petEnergetic from "@/assets/pet-energetic.png";
 
 const GOOGLE_PENDING_KEY = "novaprep_google_pending";
@@ -32,7 +33,6 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState("");
   const [targetScore, setTargetScore] = useState("1500");
   const [testDate, setTestDate] = useState("");
-  const [accountType, setAccountType] = useState<"student" | "parent">("student");
   const [busy, setBusy] = useState(false);
   const slogan = useMemo(() => SLOGANS[Math.floor(Math.random() * SLOGANS.length)], []);
 
@@ -56,6 +56,14 @@ const Auth = () => {
     setBusy(true);
     try {
       if (mode === "signup") {
+        // Validate email domain has MX records (rejects fake domains)
+        const check = await checkEmailDeliverable(email);
+        if (!check.ok) {
+          toast({ title: "Email doesn't exist", description: check.reason ?? "That email address doesn't look real.", variant: "destructive" });
+          setBusy(false);
+          return;
+        }
+        const cleanName = displayName.trim();
         const { data, error } = await withAuthTimeout(
           supabase.auth.signUp({
             email,
@@ -63,35 +71,32 @@ const Auth = () => {
             options: {
               emailRedirectTo: window.location.origin,
               data: {
-                display_name: displayName.trim(),
-                account_type: accountType,
+                display_name: cleanName,
+                full_name: cleanName,
               },
             },
           }),
         );
         if (error) throw error;
-        // Email confirmation is required — no session is returned until they click the link.
-        if (!data.session) {
-          toast({
-            title: "Confirm your email",
-            description: `We sent a confirmation link to ${email}. Click it, then sign in.`,
-          });
-          setMode("signin");
-          setPassword("");
-          return;
-        }
-        // (Fallback if auto-confirm happens to be on)
+        // Make sure display_name lands even if the trigger raced with the metadata write
         if (data.user) {
           await supabase
             .from("profiles")
             .update({
-              display_name: displayName.trim(),
-              target_score: accountType === "student" && targetScore ? parseInt(targetScore) : null,
-              test_date: accountType === "student" && testDate ? testDate : null,
+              display_name: cleanName,
+              target_score: targetScore ? parseInt(targetScore) : null,
+              test_date: testDate || null,
             })
             .eq("id", data.user.id);
         }
-        toast({ title: "Welcome aboard, Cadet", description: "Your mission begins now." });
+        if (data.session) {
+          toast({ title: `Welcome, ${cleanName}`, description: "Your mission begins now." });
+          nav("/app", { replace: true });
+          return;
+        }
+        toast({ title: "Account created", description: "You can now sign in." });
+        setMode("signin");
+        setPassword("");
       } else {
         const { data, error } = await withAuthTimeout(
           supabase.auth.signInWithPassword({ email, password }),
@@ -131,20 +136,6 @@ const Auth = () => {
           <form onSubmit={submit} className="space-y-3">
             {mode === "signup" && (
               <>
-                <Field label="Account type">
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["student", "parent"] as const).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setAccountType(t)}
-                        className={`px-3 py-2 rounded-lg border text-sm capitalize ${accountType === t ? "border-primary bg-primary/15 text-foreground" : "border-border bg-background/40 text-muted-foreground"}`}
-                      >
-                        {t === "student" ? "Student (prepping for SAT)" : "Parent (oversee child)"}
-                      </button>
-                    ))}
-                  </div>
-                </Field>
                 <Field label="Username">
                   <input
                     value={displayName}
@@ -154,16 +145,14 @@ const Auth = () => {
                     className={inputClass}
                   />
                 </Field>
-                {accountType === "student" && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Target score">
-                      <input type="number" min={400} max={1600} value={targetScore} onChange={(e) => setTargetScore(e.target.value)} className={inputClass} />
-                    </Field>
-                    <Field label="Test date">
-                      <input type="date" value={testDate} onChange={(e) => setTestDate(e.target.value)} className={inputClass} />
-                    </Field>
-                  </div>
-                )}
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Target score">
+                    <input type="number" min={400} max={1600} value={targetScore} onChange={(e) => setTargetScore(e.target.value)} className={inputClass} />
+                  </Field>
+                  <Field label="Test date">
+                    <input type="date" value={testDate} onChange={(e) => setTestDate(e.target.value)} className={inputClass} />
+                  </Field>
+                </div>
               </>
             )}
             <Field label="Email">

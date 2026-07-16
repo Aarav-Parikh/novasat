@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -7,9 +7,14 @@ import {
   Clock,
   TrendingDown,
   TrendingUp,
+  Sparkles,
+  Gem,
+  CheckCircle2,
 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { GlassCard } from "@/components/GlassCard";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNova } from "@/lib/novaprep-store";
 import { rankFromXP } from "@/lib/novaprep-data";
 import {
@@ -22,7 +27,11 @@ import { computeReadiness } from "@/lib/readiness";
 import { ReadinessCard } from "@/components/ReadinessCard";
 import { CramWidget } from "@/components/CramWidget";
 
+type Quest = { key: string; label: string; desc: string; goal: number; progress: number; reward_sp: number; kind: string; unit?: string };
+type QuestsPayload = { daily: Quest[]; weekly: Quest[]; claimed: { quest_key: string }[] } | null;
+
 const Dashboard = () => {
+  const { user } = useAuth();
   const profile = useNova((s) => s.profile);
   const mistakes = useNova((s) => s.mistakes);
   const sessions = useNova((s) => s.sessions);
@@ -40,8 +49,20 @@ const Dashboard = () => {
     [sessions, mistakes, xp, profile?.target_score, profile?.test_date],
   );
 
+  const [quests, setQuests] = useState<QuestsPayload>(null);
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase.rpc("list_quests");
+      setQuests(data as any);
+    })();
+  }, [user?.id, sessions.length]);
+
   const projectedRange = stats.projectedRange;
   const targetSuffix = profile?.target_score ? ` / ${profile.target_score}` : "";
+
+  const dailyPreview = (quests?.daily ?? []).slice(0, 3);
+  const claimedKeys = new Set((quests?.claimed ?? []).map((c) => c.quest_key));
 
   return (
     <AppLayout>
@@ -91,16 +112,55 @@ const Dashboard = () => {
         </GlassCard>
       </div>
 
-      <div className="grid lg:grid-cols-[1.35fr_1fr] gap-6 mb-8 items-start">
+      <div className="grid lg:grid-cols-[1.35fr_1fr] gap-6 mb-6 items-start">
         <ReadinessCard readiness={readiness} />
         <CramWidget mistakes={mistakes} testDate={profile?.test_date} />
       </div>
 
-
-
+      {/* Quests preview */}
+      <GlassCard variant="cyan" className="mb-6">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <span className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-secondary" /> Today's Quests
+            </span>
+            <h2 className="font-display text-2xl font-semibold mt-1">Grab some SP</h2>
+          </div>
+          <Link to="/quests" className="text-xs text-secondary hover:text-secondary-glow inline-flex items-center gap-1 shrink-0">
+            All quests <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        {dailyPreview.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Loading quests…</p>
+        ) : (
+          <ul className="grid sm:grid-cols-3 gap-3">
+            {dailyPreview.map((q) => {
+              const claimed = claimedKeys.has(q.key);
+              const done = q.progress >= q.goal;
+              const pct = Math.min(100, Math.round((q.progress / Math.max(1, q.goal)) * 100));
+              return (
+                <li key={q.key} className={`rounded-lg border p-3 ${claimed ? "border-success/40 bg-success/5" : done ? "border-secondary/40 bg-secondary/5" : "border-border/60 bg-background/40"}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-sm font-medium leading-tight">{q.label}</div>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-mono text-secondary">
+                      <Gem className="h-3 w-3" /> {q.reward_sp}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary to-secondary" style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="mt-1.5 text-[11px] text-muted-foreground flex items-center gap-1">
+                    {claimed ? (<><CheckCircle2 className="h-3 w-3 text-success" /> Claimed</>) : `${q.progress} / ${q.goal}`}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </GlassCard>
 
       <div className="grid xl:grid-cols-[1.45fr_0.85fr] gap-6 items-start">
-        <GlassCard variant="purple" className="lg:col-span-2">
+        <GlassCard variant="purple">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <span className="text-xs uppercase tracking-widest text-muted-foreground">
@@ -152,7 +212,7 @@ const Dashboard = () => {
           </ul>
         </GlassCard>
 
-        <GlassCard variant="cyan" className="flex flex-col">
+        <GlassCard className="flex flex-col">
           <span className="text-xs uppercase tracking-widest text-muted-foreground">
             Launch a session
           </span>
