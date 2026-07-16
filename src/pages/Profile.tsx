@@ -77,13 +77,7 @@ const Profile = () => {
       <div className="grid xl:grid-cols-[0.95fr_1.35fr] gap-6 items-start">
         <GlassCard variant="purple" className="overflow-hidden">
           <div className="flex items-center gap-5">
-            <div className="relative">
-              <Avatar name={profile?.display_name} url={profile?.avatar_url} size={96} className="!h-24 !w-24 text-2xl glow-purple" />
-              <label className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer border-2 border-background hover:bg-primary/90 transition" title="Upload avatar">
-                <UserCircle className="h-4 w-4" />
-                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-              </label>
-            </div>
+            <Avatar name={profile?.display_name} url={profile?.avatar_url} size={96} className="!h-24 !w-24 text-2xl glow-purple" />
             <div>
               <span className="text-xs uppercase tracking-[0.25em] text-secondary">Profile</span>
               <h1 className="font-display text-4xl font-bold mt-1">{profile?.display_name ?? "Nova Pilot"}</h1>
