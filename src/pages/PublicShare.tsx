@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Trophy, Target, Flame, Clock, Rocket } from "lucide-react";
+import { Trophy, Target, Flame, Clock } from "lucide-react";
+import { NovaLogo } from "@/components/NovaLogo";
 
 type PublicProgress = {
   ok: boolean;
