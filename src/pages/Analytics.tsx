@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { GlassCard } from "@/components/GlassCard";
 import {
@@ -12,14 +13,60 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { TrendingDown, ArrowRight, Target, Zap } from "lucide-react";
 import { useNova } from "@/lib/novaprep-store";
 import { deriveNovaStats } from "@/lib/novaprep-stats";
+
+interface WeakArea {
+  topic: string;
+  section: string;
+  count: number;
+  conceptGap: number;
+  timePressure: number;
+  misreading: number;
+  avgTime: number;
+  severity: "Critical" | "High" | "Medium";
+}
+
+const severityStyle: Record<WeakArea["severity"], string> = {
+  Critical: "bg-destructive/15 text-destructive border-destructive/40",
+  High: "bg-warning/15 text-warning border-warning/40",
+  Medium: "bg-secondary/15 text-secondary border-secondary/40",
+};
 
 const Analytics = () => {
   const mistakes = useNova((s) => s.mistakes);
   const profile = useNova((s) => s.profile);
   const sessions = useNova((s) => s.sessions).slice().reverse();
   const stats = deriveNovaStats(sessions, mistakes, profile?.xp ?? 0, profile?.target_score);
+
+  const weakAreas = useMemo<WeakArea[]>(() => {
+    const map = new Map<string, WeakArea>();
+    for (const m of mistakes) {
+      const cur = map.get(m.topic) ?? {
+        topic: m.topic,
+        section: m.section,
+        count: 0,
+        conceptGap: 0,
+        timePressure: 0,
+        misreading: 0,
+        avgTime: 0,
+        severity: "Medium" as const,
+      };
+      cur.count += 1;
+      if (m.reason === "Concept Gap") cur.conceptGap += 1;
+      if (m.reason === "Time Pressure") cur.timePressure += 1;
+      if (m.reason === "Misreading") cur.misreading += 1;
+      cur.avgTime = (cur.avgTime * (cur.count - 1) + m.time_spent) / cur.count;
+      map.set(m.topic, cur);
+    }
+    const list = [...map.values()].sort((a, b) => b.count - a.count);
+    return list.map((w) => ({
+      ...w,
+      severity: w.count >= 4 ? "Critical" : w.count >= 2 ? "High" : "Medium",
+      avgTime: Math.round(w.avgTime),
+    }));
+  }, [mistakes]);
 
   const scoreData = useMemo(() => {
     if (!sessions.length) {
@@ -28,7 +75,10 @@ const Analytics = () => {
     return sessions.map((s, i) => {
       const acc = s.total > 0 ? s.score / s.total : 0;
       const volume = Math.min(180, sessions.slice(0, i + 1).reduce((a, row) => a + row.total, 0));
-      const projected = Math.min(profile?.target_score ?? 1600, Math.round(980 + acc * 420 + volume * 1.1 + (profile?.xp ?? 0) / 22));
+      const projected = Math.min(
+        profile?.target_score ?? 1600,
+        Math.round(980 + acc * 420 + volume * 1.1 + (profile?.xp ?? 0) / 22),
+      );
       return { week: `S${i + 1}`, score: projected };
     });
   }, [sessions, profile?.xp, profile?.target_score, stats.projectedScore]);
@@ -42,7 +92,10 @@ const Analytics = () => {
       byTopic.set(m.topic, cur);
     }
     return [...byTopic.entries()]
-      .map(([topic, v]) => ({ topic: topic.length > 14 ? topic.slice(0, 12) + "…" : topic, sec: Math.round(v.sum / v.n) }))
+      .map(([topic, v]) => ({
+        topic: topic.length > 14 ? topic.slice(0, 12) + "…" : topic,
+        sec: Math.round(v.sum / v.n),
+      }))
       .sort((a, b) => b.sec - a.sec)
       .slice(0, 8);
   }, [mistakes]);
@@ -53,23 +106,16 @@ const Analytics = () => {
     return [...counts.entries()].map(([mode, count]) => ({ mode, count }));
   }, [sessions]);
 
-  const topicStrengths = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const m of mistakes) counts.set(m.topic, (counts.get(m.topic) ?? 0) + 1);
-    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
-    return {
-      weakest: sorted[0]?.[0] ?? "—",
-      strongest: sorted.length > 0 ? sorted[sorted.length - 1][0] : "—",
-    };
-  }, [mistakes]);
+  const overallAccuracy = stats.accuracy;
 
   return (
     <AppLayout>
       <div className="mb-8">
-        <span className="text-xs uppercase tracking-[0.25em] text-secondary">Telemetry</span>
-        <h1 className="font-display text-4xl font-bold mt-1">Analytics</h1>
+        <span className="text-xs uppercase tracking-[0.25em] text-secondary">Telemetry & Diagnostic</span>
+        <h1 className="font-display text-4xl font-bold mt-1">Analytics & Weak Areas</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl">
-          Track your projected score and time-per-question by topic.
+          Your projected score, pacing telemetry, and the exact skills holding you back — all in
+          one place.
         </p>
       </div>
 
@@ -146,16 +192,83 @@ const Analytics = () => {
               <span className="text-muted-foreground">7-session XP</span>
               <span className="font-mono text-secondary">+{stats.weeklyXP}</span>
             </li>
-            <li className="flex justify-between">
-              <span className="text-muted-foreground">Strongest</span>
-              <span className="text-secondary truncate ml-2">{topicStrengths.strongest}</span>
-            </li>
-            <li className="flex justify-between">
-              <span className="text-muted-foreground">Weakest</span>
-              <span className="text-warning truncate ml-2">{topicStrengths.weakest}</span>
-            </li>
           </ul>
         </GlassCard>
+
+        {/* Weak areas summary */}
+        <GlassCard>
+          <TrendingDown className="h-5 w-5 text-warning" />
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mt-3">
+            Tracked weaknesses
+          </p>
+          <p className="font-display text-3xl font-bold mt-1">{weakAreas.length}</p>
+        </GlassCard>
+        <GlassCard>
+          <Target className="h-5 w-5 text-secondary" />
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mt-3">
+            Overall accuracy
+          </p>
+          <p className="font-display text-3xl font-bold mt-1">{overallAccuracy}%</p>
+        </GlassCard>
+        <GlassCard>
+          <Zap className="h-5 w-5 text-primary" />
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mt-3">Top focus</p>
+          <p className="font-display text-xl font-semibold mt-1 truncate">
+            {weakAreas[0]?.topic ?? "—"}
+          </p>
+        </GlassCard>
+
+        <div className="lg:col-span-3">
+          <h2 className="font-display text-2xl font-semibold mb-3">Weak areas</h2>
+          {weakAreas.length === 0 ? (
+            <GlassCard className="text-center text-muted-foreground py-16">
+              <Target className="h-10 w-10 mx-auto mb-4 text-muted-foreground/60" />
+              No weak areas detected yet. Run a few practice sessions and the system will surface
+              skills worth focusing on.
+            </GlassCard>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {weakAreas.map((w) => (
+                <Link
+                  key={w.topic}
+                  to={`/test/redemption?topic=${encodeURIComponent(w.topic)}`}
+                  className="group block rounded-xl border border-border/60 bg-background/40 p-5 hover:border-secondary/50 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <span
+                        className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded border ${severityStyle[w.severity]}`}
+                      >
+                        {w.severity}
+                      </span>
+                      <h3 className="font-display text-xl font-semibold mt-3 truncate">{w.topic}</h3>
+                      <p className="text-xs text-muted-foreground mt-1">{w.section}</p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-secondary opacity-50 group-hover:opacity-100 shrink-0" />
+                  </div>
+                  <div className="mt-4 grid grid-cols-4 gap-2 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Misses</p>
+                      <p className="font-mono">{w.count}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Concept</p>
+                      <p className="font-mono text-primary">{w.conceptGap}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Pacing</p>
+                      <p className="font-mono text-warning">{w.timePressure}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Avg time</p>
+                      <p className="font-mono">{w.avgTime}s</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
 
         <GlassCard className="lg:col-span-3">
           <div className="flex items-center justify-between mb-4">
@@ -191,11 +304,17 @@ const Analytics = () => {
           <h2 className="font-display text-xl font-semibold mb-4">Session Mix</h2>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={modeData.length ? modeData : [{ mode: "none", count: 0 }]}> 
+              <BarChart data={modeData.length ? modeData : [{ mode: "none", count: 0 }]}>
                 <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
                 <XAxis dataKey="mode" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(var(--popover))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                />
                 <Bar dataKey="count" fill="hsl(var(--secondary))" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -206,13 +325,18 @@ const Analytics = () => {
           <h2 className="font-display text-xl font-semibold">Recent Sessions</h2>
           <div className="mt-4 space-y-2">
             {sessions.slice(-5).reverse().map((s, i) => (
-              <div key={`${s.created_at}-${i}`} className="flex items-center justify-between rounded-lg border border-border/60 bg-background/40 px-3 py-2 text-xs">
+              <div
+                key={`${s.created_at}-${i}`}
+                className="flex items-center justify-between rounded-lg border border-border/60 bg-background/40 px-3 py-2 text-xs"
+              >
                 <span className="capitalize text-muted-foreground">{s.mode}</span>
                 <span className="font-mono">{s.score}/{s.total}</span>
                 <span className="text-secondary">+{s.xp_earned} XP</span>
               </div>
             ))}
-            {sessions.length === 0 && <p className="text-sm text-muted-foreground">No sessions yet.</p>}
+            {sessions.length === 0 && (
+              <p className="text-sm text-muted-foreground">No sessions yet.</p>
+            )}
           </div>
         </GlassCard>
       </div>
