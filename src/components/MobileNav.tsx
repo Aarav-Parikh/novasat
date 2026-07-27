@@ -3,13 +3,10 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Target,
-  CalendarDays,
   Sparkles,
-  TrendingDown,
   BarChart3,
   UserCircle,
   ShoppingBag,
-  Rocket,
   History,
   ShieldCheck,
   MessageSquareQuote,
@@ -22,13 +19,12 @@ import {
 } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useAuth } from "@/contexts/AuthContext";
+import { NovaLogo } from "@/components/NovaLogo";
 
 const items = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/practice", label: "Practice", icon: Target },
-  { to: "/plan", label: "Daily Plan", icon: CalendarDays },
-  { to: "/weak-areas", label: "Weak Areas", icon: TrendingDown },
-  { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/practice", label: "Practice & Plan", icon: Target },
+  { to: "/analytics", label: "Analytics & Weak Areas", icon: BarChart3 },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/friends", label: "Friends", icon: Users },
   { to: "/quests", label: "Quests", icon: Sparkles },
@@ -52,9 +48,7 @@ export function MobileNav() {
     <>
       <header className="md:hidden sticky top-0 z-30 bg-background/70 backdrop-blur-xl border-b border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-            <Rocket className="h-4 w-4 text-white" />
-          </div>
+          <NovaLogo size={32} />
           <span className="font-display font-bold tracking-tight">NovaSAT</span>
         </div>
         <button
