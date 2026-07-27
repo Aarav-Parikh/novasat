@@ -1,0 +1,1 @@
+GRANT UPDATE (avatar_url) ON public.profiles TO authenticated;
