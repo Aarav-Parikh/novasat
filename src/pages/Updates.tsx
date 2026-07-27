@@ -12,46 +12,24 @@ type Entry = {
 // Newest first.
 const UPDATES: Entry[] = [
   {
-    version: "v1.4.0",
-    date: "July 16, 2026",
+    version: "v1.0.0",
+    date: "July 27, 2026",
     features: [
-      "Profile pictures — Google avatars auto-import, everyone else gets a personalized gradient badge.",
-      "Undo a friend request you sent by mistake.",
-      "Friends page redesign with avatars, pending sent list, and cleaner cards.",
-      "Update Log page (this one).",
-      "Dashboard now shows a Quests preview so you can grab SP without leaving the home screen.",
+      "Practice & Daily Plan are now one page — today's plan, coach note, sessions, and weak-concept drills in a single flow.",
+      "Analytics & Weak Areas combined into one diagnostic page with score projection, pacing charts, and weak-skill cards.",
+      "The NovaSAT rocket mark now appears everywhere the logo shows up.",
+      "Google profile pictures import automatically and stay in sync on every sign-in.",
+      "Wrong-answer explanations now include the underlying SAT pattern and a faster shortcut, not just why the answer is right.",
     ],
     fixes: [
-      "New sign-ups now keep the username you entered instead of falling back to 'Cadet'.",
-      "Removed email confirmation — you're signed in immediately (with a smarter email-exists check up front).",
-      "Removed parent-oversee accounts, the Help page, and the Articles page for a tighter product.",
-      "Admin Users table now shows session counts and syncs live from the database (no stale local data).",
-    ],
-  },
-  {
-    version: "v1.3.0",
-    date: "July 12, 2026",
-    features: [
-      "Quests page: daily + weekly SP challenges.",
-      "Badge earned pop-ups with icon and description.",
-      "Predicted SAT score shown as a range on the dashboard.",
-      "Suggested friends and search-by-email on the Friends page.",
-    ],
-    fixes: [
-      "Leaderboard now shows real display names instead of 'Cadet'.",
-      "Signup form requires a unique username.",
-    ],
-  },
-  {
-    version: "v1.2.0",
-    date: "July 6, 2026",
-    features: [
-      "Cram This Week widget on the dashboard.",
-      "Readiness score card.",
-      "Friends system with requests and inbox.",
+      "Review prompt now appears from the second login onward and keeps asking until you review or choose 'Don't ask again'.",
+      "Closing the review popup no longer silently disables it forever.",
+      "Profile pictures can now be saved to your account (previously blocked by permissions).",
+      "Old Daily Plan and Weak Areas links redirect to their new combined pages.",
     ],
   },
 ];
+
 
 export default function Updates() {
   return (
