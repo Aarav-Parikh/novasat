@@ -16,6 +16,27 @@ export function DataBootstrap() {
 
     loadAll(user.id);
 
+    // Keep the profile picture in sync with the identity provider (Google
+    // supplies `picture` / `avatar_url` in user metadata).
+    (async () => {
+      const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+      const providerAvatar =
+        (typeof meta.avatar_url === "string" && meta.avatar_url) ||
+        (typeof meta.picture === "string" && meta.picture) ||
+        null;
+      if (!providerAvatar) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data && data.avatar_url !== providerAvatar) {
+        await supabase.from("profiles").update({ avatar_url: providerAvatar }).eq("id", user.id);
+        loadAll(user.id);
+      }
+    })();
+
+
     const reload = () => loadAll(user.id);
     const channel = supabase
       .channel(`nova-sync:${user.id}`)

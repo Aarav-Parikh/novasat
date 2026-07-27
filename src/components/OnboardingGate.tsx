@@ -38,8 +38,13 @@ export function OnboardingGate() {
         return;
       }
 
-      // Tutorial already done → prompt for a review (unless already given/dismissed)
-      if (!state.review_prompt_dismissed && !state.has_review) {
+      // Second login onwards → ask for a review on EVERY login until they
+      // review or explicitly say "don't ask again".
+      if (
+        (state.login_count ?? 0) >= 2 &&
+        !state.review_prompt_dismissed &&
+        !state.has_review
+      ) {
         setShowReview(true);
       }
     })();
@@ -50,9 +55,11 @@ export function OnboardingGate() {
     await supabase.rpc("mark_tutorial_completed");
   };
 
-  const closeReview = async () => {
+  // Only persist the dismissal when the user submitted a review or chose
+  // "Don't ask again" — closing/ignoring keeps the prompt for next login.
+  const closeReview = async (dismissed: boolean) => {
     setShowReview(false);
-    await supabase.rpc("mark_review_prompt_dismissed");
+    if (dismissed) await supabase.rpc("mark_review_prompt_dismissed");
   };
 
   if (showTutorial) return <TutorialModal onClose={closeTutorial} />;

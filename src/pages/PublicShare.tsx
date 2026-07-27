@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Trophy, Target, Flame, Clock, Rocket } from "lucide-react";
+import { Trophy, Target, Flame, Clock } from "lucide-react";
+import { NovaLogo } from "@/components/NovaLogo";
 
 type PublicProgress = {
   ok: boolean;
@@ -42,9 +43,7 @@ export default function PublicShare() {
       <div className="relative max-w-4xl mx-auto px-6 py-10">
         <header className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-              <Rocket className="h-5 w-5 text-white" />
-            </div>
+            <NovaLogo size={36} />
             <div>
               <div className="font-display font-bold">NovaSAT</div>
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Progress share</div>

@@ -62,7 +62,9 @@ function buildPrompt(missed: Missed[]) {
       "why_correct": "2-3 sentences explaining precisely WHY the correct answer is right",
       "why_user_wrong": "2-3 sentences explaining specifically why the user's chosen answer is wrong (or 'Skipped/blank' if empty)",
       "distractor_traps": "1-3 sentences on which of the other choices are the closest/most tempting and the specific trap type (e.g., swapped variable, opposite tone, out-of-scope, off-by-one, verb tense mismatch)",
-      "fix_it_tip": "1-2 sentence actionable strategy to avoid this mistake next time"
+      "fix_it_tip": "1-2 sentence actionable strategy to avoid this mistake next time",
+      "underlying_pattern": "2-3 sentences naming the recurring SAT pattern/question archetype behind this item and how to recognize it instantly next time",
+      "shortcut": "a concrete faster route: plugging in numbers, elimination heuristic, structure clue, or algebraic shortcut (<=240 chars)"
     }
   ]
 }
@@ -71,6 +73,7 @@ Rules:
 - 1 flashcard per unique concept in the missed set, max 10.
 - answer_insights: one entry per missed question, keyed by the input question_id. Do NOT invent question_ids.
 - Use real Unicode math (√ π ² ³ ≤ ≥), never LaTeX. No markdown. No prose outside the JSON.
+- ALWAYS fill underlying_pattern and shortcut: students need the repeatable pattern and the fast trick, not just why the answer is right.
 - Be blunt about what tempting answers look like — students learn from concrete trap-spotting.
 
 MISSED QUESTIONS:

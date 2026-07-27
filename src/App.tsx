@@ -14,8 +14,6 @@ import Index from "./pages/Index.tsx";
 import Landing from "./pages/Landing.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Practice from "./pages/Practice.tsx";
-import DailyPlan from "./pages/DailyPlan.tsx";
-import WeakAreas from "./pages/WeakAreas.tsx";
 import Analytics from "./pages/Analytics.tsx";
 import TestSession from "./pages/TestSession.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -51,10 +49,10 @@ const App = () => (
               <Route path="/friends" element={<RequireAuth><Friends /></RequireAuth>} />
               <Route path="/quests" element={<RequireAuth><Quests /></RequireAuth>} />
               <Route path="/practice" element={<RequireAuth><Practice /></RequireAuth>} />
-              <Route path="/plan" element={<RequireAuth><DailyPlan /></RequireAuth>} />
+              <Route path="/plan" element={<Navigate to="/practice" replace />} />
               <Route path="/coach" element={<Navigate to="/practice" replace />} />
               <Route path="/coach/:slug" element={<RequireAuth><CoachArticle /></RequireAuth>} />
-              <Route path="/weak-areas" element={<RequireAuth><WeakAreas /></RequireAuth>} />
+              <Route path="/weak-areas" element={<Navigate to="/analytics" replace />} />
               <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
               <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
               <Route path="/pet" element={<RequireAuth><Pet /></RequireAuth>} />

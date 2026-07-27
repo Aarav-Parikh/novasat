@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import petEnergetic from "@/assets/pet-energetic.png";
+import { NovaLogo } from "@/components/NovaLogo";
 
 const features = [
   {
@@ -56,9 +57,7 @@ export default function Landing() {
       {/* Nav */}
       <header className="relative z-10 max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center font-display font-bold">
-            N
-          </div>
+          <NovaLogo size={32} />
           <span className="font-display text-lg font-bold tracking-tight">
             Nova<span className="text-gradient-nebula">SAT</span>
           </span>

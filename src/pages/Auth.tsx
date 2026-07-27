@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Rocket, Sparkles, Target, TrendingUp } from "lucide-react";
+import { Sparkles, Target, TrendingUp } from "lucide-react";
+import { NovaLogo } from "@/components/NovaLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
@@ -122,9 +123,7 @@ const Auth = () => {
       <div className="relative z-10 flex items-center justify-center p-6 lg:p-10">
         <div className="glass glass-purple p-8 max-w-md w-full animate-scale-in">
           <div className="flex items-center gap-3 mb-6">
-            <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center glow-purple">
-              <Rocket className="h-5 w-5 text-white" />
-            </div>
+            <NovaLogo size={44} glow />
             <div>
               <div className="font-display font-bold text-xl leading-none">NovaSAT</div>
               <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-1">

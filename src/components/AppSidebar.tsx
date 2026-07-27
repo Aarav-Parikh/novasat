@@ -2,12 +2,9 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Target,
-  CalendarDays,
-  TrendingDown,
   BarChart3,
   UserCircle,
   ShoppingBag,
-  Rocket,
   ShieldCheck,
   MessageSquareQuote,
   PawPrint,
@@ -22,13 +19,12 @@ import { rankFromXP } from "@/lib/novaprep-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Avatar } from "@/components/Avatar";
+import { NovaLogo } from "@/components/NovaLogo";
 
 const items = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/practice", label: "Practice", icon: Target },
-  { to: "/plan", label: "Daily Plan", icon: CalendarDays },
-  { to: "/weak-areas", label: "Weak Areas", icon: TrendingDown },
-  { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/practice", label: "Practice & Plan", icon: Target },
+  { to: "/analytics", label: "Analytics & Weak Areas", icon: BarChart3 },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/friends", label: "Friends", icon: Users },
   { to: "/quests", label: "Quests", icon: Sparkles },
@@ -58,9 +54,7 @@ export function AppSidebar() {
     <aside className="hidden md:flex w-64 shrink-0 flex-col bg-sidebar/60 backdrop-blur-xl border-r border-sidebar-border relative z-10 sticky top-0 h-screen self-start">
       <div className="px-6 pt-6 pb-6">
         <div className="flex items-center gap-2.5">
-          <div className="relative h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-[var(--glow-purple)]">
-            <Rocket className="h-5 w-5 text-white" />
-          </div>
+          <NovaLogo size={36} glow />
           <div>
             <div className="font-display font-bold text-lg leading-none tracking-tight">NovaSAT</div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-1">

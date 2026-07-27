@@ -45,6 +45,8 @@ interface AnswerInsight {
   why_user_wrong?: string;
   distractor_traps?: string;
   fix_it_tip?: string;
+  underlying_pattern?: string;
+  shortcut?: string;
 }
 
 interface ReviewData {
@@ -127,6 +129,18 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
                   <div>
                     <div className="text-[10px] uppercase tracking-widest text-warning">Trap breakdown</div>
                     <div className="text-xs mt-1 text-foreground/90 leading-relaxed">{ins.distractor_traps}</div>
+                  </div>
+                )}
+                {ins.underlying_pattern && (
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-primary">The underlying pattern</div>
+                    <div className="text-xs mt-1 text-foreground/90 leading-relaxed">{ins.underlying_pattern}</div>
+                  </div>
+                )}
+                {ins.shortcut && (
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-secondary">Shortcut / trick</div>
+                    <div className="text-xs mt-1 text-foreground/90 leading-relaxed">{ins.shortcut}</div>
                   </div>
                 )}
                 {ins.fix_it_tip && (
