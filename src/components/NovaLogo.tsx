@@ -1,4 +1,4 @@
-import rocket from "@/assets/nova-rocket.png";
+import rocket from "@/assets/nova-rocket.svg";
 
 interface Props {
   size?: number;
@@ -18,7 +18,7 @@ export function NovaLogo({ size = 36, className = "", glow = false }: Props) {
       <img
         src={rocket}
         alt="NovaSAT logo"
-        style={{ height: size * 0.62, width: size * 0.62 }}
+        style={{ height: size * 0.6, width: size * 0.6 }}
         className="object-contain"
       />
     </div>
