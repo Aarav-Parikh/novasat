@@ -24,13 +24,13 @@ import { NovaLogo } from "@/components/NovaLogo";
 const items = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard },
   { to: "/practice", label: "Practice & Plan", icon: Target },
-  { to: "/analytics", label: "Analytics & Weak Areas", icon: BarChart3 },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/friends", label: "Friends", icon: Users },
   { to: "/quests", label: "Quests", icon: Sparkles },
   { to: "/pet", label: "Pet", icon: PawPrint },
   { to: "/store", label: "Store", icon: ShoppingBag },
-  { to: "/updates", label: "What's New", icon: History },
+  { to: "/updates", label: "Update Log", icon: History },
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 

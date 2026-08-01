@@ -81,14 +81,15 @@ const Auth = () => {
         if (error) throw error;
         // Make sure display_name lands even if the trigger raced with the metadata write
         if (data.user) {
-          await supabase
+          const { error: profileError } = await supabase
             .from("profiles")
-            .update({
+            .upsert({
+              id: data.user.id,
               display_name: cleanName,
               target_score: targetScore ? parseInt(targetScore) : null,
               test_date: testDate || null,
-            })
-            .eq("id", data.user.id);
+            }, { onConflict: "id" });
+          if (profileError) throw profileError;
         }
         if (data.session) {
           toast({ title: `Welcome, ${cleanName}`, description: "Your mission begins now." });

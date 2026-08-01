@@ -121,7 +121,9 @@ function buildUserPrompt(opts: {
   if (difficultyBias === "harder") diffInstruction = "Skew HEAVILY toward 'hard' (about 60% hard, 30% medium, 10% easy). Hard questions should require multi-step reasoning, hidden traps, or compound skills.";
   else if (difficultyBias === "easier") diffInstruction = "Skew toward 'medium' with some 'easy'.";
 
-  const topicInstruction = topic ? `Focus every question on this skill/topic: ${topic}.` : "Vary topics across the allowed SAT skills.";
+  const topicInstruction = topic
+    ? `STRICT TOPIC LOCK: Every question must test ONLY "${topic}" and no adjacent, prerequisite, or mixed skill. Set the topic field to EXACTLY "${topic}" for every item. If the requested topic is broad, vary contexts while staying inside that exact topic. Never include a question from another concept.`
+    : "Vary topics across the allowed SAT skills.";
   const mathMixInstruction = section === "Math" || mode === "math"
     ? `For this batch, return exactly ${sprCount} student-produced response questions and exactly ${count - sprCount} multiple-choice questions.`
     : "All questions in this batch must be multiple-choice.";
@@ -383,12 +385,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Enforce section filter so a Math drill never gets reading questions (and vice-versa)
+    // Enforce section and exact-topic locks server-side. A model instruction alone
+    // is not enough: off-scope items must never reach the student.
     const sectionFiltered = effectiveSection
       ? collected.filter((q) => q.section === effectiveSection)
       : collected;
+    const normalizeTopic = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const topicFiltered = topic
+      ? sectionFiltered.filter((q) => normalizeTopic(q.topic) === normalizeTopic(topic))
+      : sectionFiltered;
 
-    const questions = sectionFiltered.slice(0, count);
+    const questions = topicFiltered.slice(0, count);
     // Require at least a usable minimum so the session isn't stuck on 1 question
     const minUsable = Math.min(count, Math.max(4, Math.floor(count * 0.4)));
     if (questions.length < minUsable) {

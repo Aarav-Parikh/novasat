@@ -18,11 +18,13 @@ export function OnboardingGate() {
     if (!user) return;
     const sessionKey = `nova_onboarding_checked::${user.id}`;
     if (sessionStorage.getItem(sessionKey)) return;
-    sessionStorage.setItem(sessionKey, "1");
 
     (async () => {
       const { data, error } = await supabase.rpc("record_login_and_get_onboarding");
-      if (error || !data || typeof data !== "object") return;
+      if (error || !data || typeof data !== "object") {
+        console.error("Unable to record login", error);
+        return;
+      }
       const state = data as {
         ok?: boolean;
         login_count?: number;
@@ -31,6 +33,7 @@ export function OnboardingGate() {
         has_review?: boolean;
       };
       if (!state.ok) return;
+      sessionStorage.setItem(sessionKey, "1");
 
       // First login → tutorial
       if (!state.tutorial_completed) {

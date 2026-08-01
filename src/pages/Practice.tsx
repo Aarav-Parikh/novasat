@@ -61,9 +61,9 @@ const Practice = () => {
   const progress = Math.round((completedCount / Math.max(1, routine.tasks.length)) * 100);
 
   const weakDrills = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const m of mistakes) counts.set(m.topic, (counts.get(m.topic) ?? 0) + 1);
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const counts = new Map<string, { count: number; section: string }>();
+    for (const m of mistakes) counts.set(m.topic, { count: (counts.get(m.topic)?.count ?? 0) + 1, section: m.section });
+    return [...counts.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, 6);
   }, [mistakes]);
 
   const dominantReason = useMemo(() => {
@@ -269,11 +269,11 @@ const Practice = () => {
       <div className="grid md:grid-cols-2 gap-4 mb-10">
         {weakDrills.length === 0 ? (
           <GlassCard><p className="text-sm text-muted-foreground">No weak areas yet — take a drill or full test to surface them.</p></GlassCard>
-        ) : weakDrills.map(([topic, count], i) => (
-          <Link key={topic} to={`/test/redemption?topic=${encodeURIComponent(topic)}`} className="block">
+        ) : weakDrills.map(([topic, info], i) => (
+          <Link key={topic} to={`/test/redemption?topic=${encodeURIComponent(topic)}&section=${encodeURIComponent(info.section)}`} className="block">
             <GlassCard className="group cursor-pointer hover:scale-[1.01] transition-transform h-full">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-secondary">{count} miss{count === 1 ? "" : "es"}</span>
+                <span className="text-xs font-mono text-secondary">{info.count} miss{info.count === 1 ? "" : "es"}</span>
                 {i === 0 && <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 rounded bg-primary/15 text-primary-glow border border-primary/30">Recommended</span>}
               </div>
               <h3 className="font-display text-lg font-semibold mt-3">{topic}</h3>
@@ -291,7 +291,7 @@ const Practice = () => {
       <p className="text-sm text-muted-foreground mb-3 max-w-2xl">Spaced practice on concepts you've already worked on, so they stay sharp.</p>
       <div className="grid md:grid-cols-3 gap-4">
         {REINFORCE_TOPICS.map((topic) => (
-          <Link key={topic} to={`/test/redemption?topic=${encodeURIComponent(topic)}`} className="block">
+          <Link key={topic} to={`/test/redemption?topic=${encodeURIComponent(topic)}&section=${encodeURIComponent(/Reading|Grammar|Vocabulary/.test(topic) ? "Reading & Writing" : "Math")}`} className="block">
             <GlassCard className="group cursor-pointer hover:scale-[1.01] transition-transform h-full">
               <h3 className="font-display text-base font-semibold">{topic}</h3>
               <p className="text-xs text-muted-foreground mt-2">Quick reinforcement drill to keep this concept fresh.</p>

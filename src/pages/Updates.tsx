@@ -13,19 +13,17 @@ type Entry = {
 const UPDATES: Entry[] = [
   {
     version: "v1.0.0",
-    date: "July 27, 2026",
+    date: "Initial launch",
     features: [
-      "Practice & Daily Plan are now one page — today's plan, coach note, sessions, and weak-concept drills in a single flow.",
-      "Analytics & Weak Areas combined into one diagnostic page with score projection, pacing charts, and weak-skill cards.",
-      "The NovaSAT rocket mark now appears everywhere the logo shows up.",
-      "Google profile pictures import automatically and stay in sync on every sign-in.",
-      "Wrong-answer explanations now include the underlying SAT pattern and a faster shortcut, not just why the answer is right.",
+      "Adaptive SAT practice with Reading & Writing drills, Math drills, short simulations, and full-length simulations.",
+      "Personalized daily plans and concept-specific reinforcement built from each student's performance.",
+      "Post-test answer keys, flashcards, concept breakdowns, error categorization, patterns, and solving shortcuts.",
+      "Score projections, readiness tracking, pacing analytics, weak-area diagnostics, session history, and badges.",
+      "Friends, weekly leaderboards, daily and weekly SP quests, and a customizable study companion named Buddy.",
+      "Google and email sign-in, synced profiles, cloud-saved progress, and an administrator activity console.",
     ],
     fixes: [
-      "Review prompt now appears from the second login onward and keeps asking until you review or choose 'Don't ask again'.",
-      "Closing the review popup no longer silently disables it forever.",
-      "Profile pictures can now be saved to your account (previously blocked by permissions).",
-      "Old Daily Plan and Weak Areas links redirect to their new combined pages.",
+      "Initial public release of NovaSAT.",
     ],
   },
 ];
@@ -35,7 +33,7 @@ export default function Updates() {
   return (
     <AppLayout>
       <div className="mb-8">
-        <span className="text-xs uppercase tracking-[0.25em] text-secondary">What's New</span>
+        <span className="text-xs uppercase tracking-[0.25em] text-secondary">Update Log</span>
         <h1 className="font-display text-4xl font-bold">Update Log</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl">
           Every shipped improvement, feature, and fix. Newest at the top.

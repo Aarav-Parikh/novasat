@@ -1,4 +1,4 @@
-import rocket from "@/assets/nova-rocket.svg";
+import logo from "@/assets/novasat-logo.png.asset.json";
 
 interface Props {
   size?: number;
@@ -6,20 +6,22 @@ interface Props {
   glow?: boolean;
 }
 
-/** NovaSAT mark — always the rocket ship, never a bare letter. */
+/** NovaSAT mark — always the high-resolution rocket mark, never a bare letter. */
 export function NovaLogo({ size = 36, className = "", glow = false }: Props) {
   return (
     <div
       style={{ height: size, width: size }}
-      className={`shrink-0 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center ${
+      className={`shrink-0 overflow-hidden rounded-xl flex items-center justify-center ${
         glow ? "shadow-[var(--glow-purple)]" : ""
       } ${className}`}
     >
       <img
-        src={rocket}
+        src={logo.url}
         alt="NovaSAT logo"
-        style={{ height: size * 0.6, width: size * 0.6 }}
-        className="object-contain"
+        width={1024}
+        height={1024}
+        style={{ height: size, width: size }}
+        className="object-cover"
       />
     </div>
   );

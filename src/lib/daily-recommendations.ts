@@ -252,5 +252,6 @@ export function dailyTaskKey(task: DailyTask) {
 
 export function routeForDailyTask(task: DailyTask) {
   const params = new URLSearchParams({ topic: task.topic, day: "Today", task: task.task });
+  if (task.section !== "Mixed") params.set("section", task.section);
   return `/test/${task.mode}?${params.toString()}`;
 }
