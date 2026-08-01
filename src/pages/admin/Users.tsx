@@ -46,10 +46,11 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
 
   async function reload() {
-    const [{ data: g }, { data: u }] = await Promise.all([
+    const [{ data: g, error: globalError }, { data: u, error: usersError }] = await Promise.all([
       supabase.rpc("admin_global_stats"),
       supabase.rpc("admin_user_summary"),
     ]);
+    if (globalError || usersError) console.error("Admin activity sync failed", globalError ?? usersError);
     setStats((g as any)?.[0] ?? null);
     setUsers((u as UserRow[]) ?? []);
     setLoading(false);

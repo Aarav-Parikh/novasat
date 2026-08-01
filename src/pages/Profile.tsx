@@ -124,7 +124,7 @@ const Profile = () => {
           <div className="mt-5 flex flex-wrap gap-2">
             <Link to="/pet" className="inline-flex px-4 py-2 rounded-lg bg-muted border border-border text-sm font-medium">Visit Buddy</Link>
             <Link to="/store" className="inline-flex px-4 py-2 rounded-lg bg-muted border border-border text-sm font-medium">Open Store</Link>
-            <Link to="/updates" className="inline-flex px-4 py-2 rounded-lg bg-muted border border-border text-sm font-medium">What's new</Link>
+            <Link to="/updates" className="inline-flex px-4 py-2 rounded-lg bg-muted border border-border text-sm font-medium">Update Log</Link>
           </div>
         </GlassCard>
 

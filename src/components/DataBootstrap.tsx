@@ -24,14 +24,21 @@ export function DataBootstrap() {
         (typeof meta.avatar_url === "string" && meta.avatar_url) ||
         (typeof meta.picture === "string" && meta.picture) ||
         null;
-      if (!providerAvatar) return;
+      const providerName =
+        (typeof meta.display_name === "string" && meta.display_name.trim()) ||
+        (typeof meta.full_name === "string" && meta.full_name.trim()) ||
+        (typeof meta.name === "string" && meta.name.trim()) ||
+        user.email?.split("@")[0] || null;
       const { data } = await supabase
         .from("profiles")
-        .select("avatar_url")
+        .select("avatar_url,display_name")
         .eq("id", user.id)
         .maybeSingle();
-      if (data && data.avatar_url !== providerAvatar) {
-        await supabase.from("profiles").update({ avatar_url: providerAvatar }).eq("id", user.id);
+      const patch: { avatar_url?: string; display_name?: string } = {};
+      if (providerAvatar && data?.avatar_url !== providerAvatar) patch.avatar_url = providerAvatar;
+      if (providerName && !data?.display_name?.trim()) patch.display_name = providerName;
+      if (Object.keys(patch).length > 0) {
+        await supabase.from("profiles").update(patch).eq("id", user.id);
         loadAll(user.id);
       }
     })();

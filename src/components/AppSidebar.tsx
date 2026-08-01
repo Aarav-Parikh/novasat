@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Target,
@@ -13,24 +14,24 @@ import {
   Users,
   Sparkles,
   History,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
-import { useNova } from "@/lib/novaprep-store";
-import { rankFromXP } from "@/lib/novaprep-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { Avatar } from "@/components/Avatar";
 import { NovaLogo } from "@/components/NovaLogo";
+import { Button } from "@/components/ui/button";
 
 const items = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard },
   { to: "/practice", label: "Practice & Plan", icon: Target },
-  { to: "/analytics", label: "Analytics & Weak Areas", icon: BarChart3 },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/friends", label: "Friends", icon: Users },
   { to: "/quests", label: "Quests", icon: Sparkles },
   { to: "/pet", label: "Pet", icon: PawPrint },
   { to: "/store", label: "Store", icon: ShoppingBag },
-  { to: "/updates", label: "What's New", icon: History },
+  { to: "/updates", label: "Update Log", icon: History },
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 
@@ -40,39 +41,30 @@ const adminItems = [
 ];
 
 export function AppSidebar() {
-  const profile = useNova((s) => s.profile);
   const { signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const xp = profile?.xp ?? 0;
-  const info = rankFromXP(xp);
-  const pct =
-    info.ceiling === info.floor
-      ? 100
-      : Math.min(100, ((xp - info.floor) / (info.ceiling - info.floor)) * 100);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("nova-sidebar-collapsed") === "1");
+
+  useEffect(() => {
+    localStorage.setItem("nova-sidebar-collapsed", collapsed ? "1" : "0");
+  }, [collapsed]);
 
   return (
-    <aside className="hidden md:flex w-64 shrink-0 flex-col bg-sidebar/60 backdrop-blur-xl border-r border-sidebar-border relative z-10 sticky top-0 h-screen self-start">
-      <div className="px-6 pt-6 pb-6">
-        <div className="flex items-center gap-2.5">
+    <aside className={`${collapsed ? "w-[4.5rem]" : "w-64"} hidden md:flex shrink-0 flex-col bg-sidebar/60 backdrop-blur-xl border-r border-sidebar-border relative z-20 sticky top-0 h-screen self-start transition-[width] duration-300`}>
+      <div className={`${collapsed ? "px-3" : "px-5"} pt-5 pb-5 flex items-center justify-between gap-2`}>
+        <div className="flex items-center gap-2.5 min-w-0">
           <NovaLogo size={36} glow />
-          <div>
+          {!collapsed && <div>
             <div className="font-display font-bold text-lg leading-none tracking-tight">NovaSAT</div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-1">
               Adaptive · SAT
             </div>
-          </div>
+          </div>}
         </div>
+        {!collapsed && <Button variant="ghost" size="icon" onClick={() => setCollapsed(true)} aria-label="Collapse sidebar" title="Collapse sidebar" className="h-8 w-8 shrink-0"><PanelLeftClose /></Button>}
       </div>
 
-      <div className="px-4 pb-4">
-        <div className="flex items-center gap-3 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/40 p-3">
-          <Avatar name={profile?.display_name} url={profile?.avatar_url} size={40} />
-          <div className="min-w-0 flex-1">
-            <div className="font-medium text-sm truncate">{profile?.display_name || "Cadet"}</div>
-            <div className="text-[11px] text-muted-foreground truncate">{info.rank}</div>
-          </div>
-        </div>
-      </div>
+      {collapsed && <Button variant="ghost" size="icon" onClick={() => setCollapsed(false)} aria-label="Expand sidebar" title="Expand sidebar" className="mx-auto mb-3 h-9 w-9"><PanelLeftOpen /></Button>}
 
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
         {items.map((it) => (
@@ -82,7 +74,7 @@ export function AppSidebar() {
             end={it.to === "/app"}
             className={({ isActive }) =>
               [
-                "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
+                `group flex items-center ${collapsed ? "justify-center" : "gap-3"} px-3 py-2.5 rounded-lg text-sm transition-all`,
                 isActive
                   ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.4)]"
                   : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
@@ -96,8 +88,8 @@ export function AppSidebar() {
                     isActive ? "text-primary" : "text-muted-foreground group-hover:text-secondary"
                   }`}
                 />
-                <span className="font-medium">{it.label}</span>
-                {isActive && (
+                {!collapsed && <span className="font-medium">{it.label}</span>}
+                {!collapsed && isActive && (
                   <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary))]" />
                 )}
               </>
@@ -107,16 +99,16 @@ export function AppSidebar() {
 
         {isAdmin && (
           <>
-            <div className="mt-4 mb-1 px-3 text-[10px] uppercase tracking-[0.2em] text-warning/80">
+            {!collapsed && <div className="mt-4 mb-1 px-3 text-[10px] uppercase tracking-[0.2em] text-warning/80">
               Admin
-            </div>
+            </div>}
             {adminItems.map((it) => (
               <NavLink
                 key={it.to}
                 to={it.to}
                 className={({ isActive }) =>
                   [
-                    "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
+                      `group flex items-center ${collapsed ? "justify-center" : "gap-3"} px-3 py-2.5 rounded-lg text-sm transition-all`,
                     isActive
                       ? "bg-warning/15 text-foreground shadow-[inset_0_0_0_1px_hsl(var(--warning)/0.4)]"
                       : "text-sidebar-foreground hover:bg-sidebar-accent/50",
@@ -124,7 +116,7 @@ export function AppSidebar() {
                 }
               >
                 <it.icon className="h-4 w-4 text-warning" />
-                <span className="font-medium">{it.label}</span>
+                {!collapsed && <span className="font-medium">{it.label}</span>}
               </NavLink>
             ))}
           </>
@@ -132,30 +124,14 @@ export function AppSidebar() {
       </nav>
 
       <div className="p-4">
-        <div className="glass glass-purple p-4">
-          <div className="flex items-center justify-between text-xs uppercase tracking-widest text-muted-foreground">
-            <span>Rank</span>
-            <span className="font-mono text-secondary">{xp.toLocaleString()} XP</span>
-          </div>
-          <div className="mt-2 font-display font-semibold text-lg text-gradient-nebula">
-            {info.rank}
-          </div>
-          <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-primary to-secondary"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <div className="mt-2 text-[11px] text-muted-foreground">
-            Next: <span className="text-foreground/80">{info.next}</span>
-          </div>
-        </div>
-        <button
+        <Button
+          variant="outline"
           onClick={signOut}
-          className="mt-3 w-full inline-flex items-center justify-center gap-2 text-xs px-3 py-2 rounded-lg bg-muted/40 hover:bg-muted border border-border text-muted-foreground hover:text-foreground transition-colors"
+          title="Sign out"
+          className={`${collapsed ? "w-10 px-0" : "w-full"} text-xs text-muted-foreground`}
         >
-          <LogOut className="h-3.5 w-3.5" /> Sign out
-        </button>
+          <LogOut className="h-3.5 w-3.5" /> {!collapsed && "Sign out"}
+        </Button>
       </div>
     </aside>
   );
