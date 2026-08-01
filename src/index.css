@@ -236,6 +236,28 @@
     -moz-user-select: none;
     user-select: none;
   }
+
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 700ms var(--transition-smooth), transform 700ms var(--transition-smooth);
+  }
+  [data-reveal].is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .landing-feature {
+    transition: transform 300ms var(--transition-smooth), border-color 300ms var(--transition-smooth), box-shadow 300ms var(--transition-smooth);
+  }
+  .landing-feature:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-deep);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] { opacity: 1; transform: none; transition: none; }
+  .landing-feature, .starfield { animation: none; transition: none; }
 }
 
 @keyframes twinkle {

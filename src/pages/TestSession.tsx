@@ -74,6 +74,7 @@ const TestSession = () => {
   const syncProfile = useNova((s) => s.syncProfile);
   const mistakes = useNova((s) => s.mistakes);
   const requestedTopic = searchParams.get("topic") ?? undefined;
+  const requestedSectionParam = searchParams.get("section");
   const taskLabel = searchParams.get("task") ?? undefined;
   const dayLabel = searchParams.get("day") ?? undefined;
   const weakTopic = requestedTopic ?? mistakes[0]?.topic;
@@ -184,7 +185,18 @@ const TestSession = () => {
       } else {
         const fullSection = targetModule === 1 ? "Reading & Writing" : "Math";
         const modeSection = m === "math" ? "Math" : m === "reading" ? "Reading & Writing" : undefined;
-        const requestedSection = isFullLike ? fullSection : modeSection;
+        const explicitSection = requestedSectionParam === "Math" || requestedSectionParam === "Reading & Writing"
+          ? requestedSectionParam
+          : undefined;
+        const topicMistakeSection = requestedTopic
+          ? mistakes.find((item) => item.topic.toLowerCase() === requestedTopic.toLowerCase())?.section
+          : undefined;
+        const inferredTopicSection = topicMistakeSection === "Math" || topicMistakeSection === "Reading & Writing"
+          ? topicMistakeSection
+          : /read|writing|grammar|vocab|passage|inference|punct|transition|verb|pronoun|modifier/i.test(requestedTopic ?? "")
+            ? "Reading & Writing"
+            : requestedTopic ? "Math" : undefined;
+        const requestedSection = isFullLike ? fullSection : explicitSection ?? modeSection ?? inferredTopicSection;
         const modeTopic = requestedTopic && requestedTopic !== "Mixed SAT Skills" ? requestedTopic : undefined;
         const targetCount = isFullLike ? (targetModule === 1 ? fullCounts.m1 : fullCounts.m2) : MODULE_SIZE[m];
         // Request extra questions so the post-filter pool is large enough
@@ -198,12 +210,13 @@ const TestSession = () => {
           section: requestedSection ?? undefined,
         });
         let pool: Question[] = await fetchBatch();
-        let filtered = requestedSection ? pool.filter((q) => q.section === requestedSection) : pool;
+        const topicMatches = (q: Question) => !modeTopic || q.topic.trim().toLowerCase() === modeTopic.trim().toLowerCase();
+        let filtered = pool.filter((q) => (!requestedSection || q.section === requestedSection) && topicMatches(q));
         // Retry once if the AI returned too few items of the requested subject
         if (requestedSection && filtered.length < targetCount) {
           try {
             const more = await fetchBatch();
-            filtered = [...filtered, ...more.filter((q) => q.section === requestedSection)];
+            filtered = [...filtered, ...more.filter((q) => q.section === requestedSection && topicMatches(q))];
           } catch {}
         }
         setQuestions(prepareQuestions(filtered.slice(0, targetCount)));
@@ -229,7 +242,7 @@ const TestSession = () => {
   useEffect(() => {
     loadQuestions("balanced");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [m]);
+  }, [m, requestedTopic, requestedSectionParam]);
 
   // Resume any in-progress between-module break that survives tab switches
   useEffect(() => {

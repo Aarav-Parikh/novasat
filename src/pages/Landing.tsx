@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -50,6 +51,16 @@ export default function Landing() {
   const ctaHref = user ? "/app" : "/auth";
   const ctaLabel = user ? "Open dashboard" : "Start training free";
 
+  useEffect(() => {
+    const elements = document.querySelectorAll<HTMLElement>("[data-reveal]");
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => entry.target.classList.toggle("is-visible", entry.isIntersecting)),
+      { threshold: 0.12, rootMargin: "0px 0px -8%" },
+    );
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="starfield" />
@@ -79,8 +90,8 @@ export default function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pt-12 pb-20 grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center">
-        <div>
+      <section className="relative z-10 max-w-6xl mx-auto px-6 pt-12 pb-20 min-h-[82vh] flex items-center">
+        <div className="relative w-full max-w-3xl" data-reveal>
           <span className="inline-block text-[11px] uppercase tracking-[0.3em] text-secondary mb-4">
             Adaptive SAT training
           </span>
@@ -113,22 +124,11 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="relative">
-          <div className="absolute -inset-8 bg-gradient-to-tr from-primary/20 to-secondary/20 blur-3xl rounded-full" />
-          <div className="relative glass rounded-3xl p-8 flex flex-col items-center">
-            <img
-              src={petEnergetic}
-              alt="NovaSAT study companion"
-              className="w-56 h-56 object-contain drop-shadow-2xl"
-              loading="eager"
-            />
-            <div className="mt-4 text-center">
-              <div className="text-xs uppercase tracking-[0.25em] text-secondary">
-                Your study pet
-              </div>
-              <div className="font-display text-lg font-bold mt-1">
-                Levels up when you do
-              </div>
+          <div className="mt-10 flex items-center gap-4 animate-float">
+            <img src={petEnergetic} alt="Buddy, the NovaSAT study companion" className="h-24 w-24 object-contain drop-shadow-2xl" loading="eager" />
+            <div>
+              <div className="text-xs uppercase tracking-[0.25em] text-secondary">Meet Buddy</div>
+              <div className="font-display text-lg font-bold mt-1">Your progress has a copilot.</div>
             </div>
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function Landing() {
 
       {/* Features */}
       <section id="features" className="relative z-10 max-w-6xl mx-auto px-6 py-16">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12" data-reveal>
           <span className="text-[11px] uppercase tracking-[0.3em] text-secondary">
             What you get
           </span>
@@ -146,7 +146,7 @@ export default function Landing() {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {features.map(({ icon: Icon, title, body }) => (
-            <div key={title} className="glass rounded-2xl p-6">
+            <div key={title} className="glass rounded-2xl p-6 landing-feature" data-reveal>
               <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center mb-4">
                 <Icon className="h-5 w-5 text-secondary" />
               </div>
@@ -159,7 +159,7 @@ export default function Landing() {
 
       {/* How it works */}
       <section id="how" className="relative z-10 max-w-6xl mx-auto px-6 py-16">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12" data-reveal>
           <span className="text-[11px] uppercase tracking-[0.3em] text-secondary">
             How it works
           </span>
@@ -185,7 +185,7 @@ export default function Landing() {
               b: "Projected score updates with every session. Beat your target.",
             },
           ].map((s) => (
-            <li key={s.n} className="glass rounded-2xl p-6">
+            <li key={s.n} className="glass rounded-2xl p-6 landing-feature" data-reveal>
               <div className="text-gradient-nebula font-display text-3xl font-bold">
                 {s.n}
               </div>
@@ -197,7 +197,7 @@ export default function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 py-20 text-center">
+      <section className="relative z-10 max-w-4xl mx-auto px-6 py-20 text-center" data-reveal>
         <h2 className="font-display text-3xl sm:text-4xl font-bold">
           Ready to <span className="text-gradient-nebula">launch</span>?
         </h2>
