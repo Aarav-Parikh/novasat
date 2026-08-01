@@ -117,13 +117,11 @@ export default function Landing() {
               See features
             </a>
           </div>
-          <div className="mt-6 flex items-center gap-5 text-xs text-muted-foreground">
+          <div className="mt-6 flex flex-wrap items-center gap-5 text-xs text-muted-foreground">
             <span>✓ Free to start</span>
             <span>✓ No card required</span>
             <span>✓ Bluebook-style sims</span>
           </div>
-        </div>
-
           <div className="mt-10 flex items-center gap-4 animate-float">
             <img src={petEnergetic} alt="Buddy, the NovaSAT study companion" className="h-24 w-24 object-contain drop-shadow-2xl" loading="eager" />
             <div>
