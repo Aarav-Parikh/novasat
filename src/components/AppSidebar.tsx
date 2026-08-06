@@ -16,6 +16,7 @@ import {
   History,
   PanelLeftClose,
   PanelLeftOpen,
+  LineChart,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";

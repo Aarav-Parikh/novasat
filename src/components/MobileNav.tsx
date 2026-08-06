@@ -16,6 +16,7 @@ import {
   LogOut,
   Trophy,
   Users,
+  LineChart,
 } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useAuth } from "@/contexts/AuthContext";
