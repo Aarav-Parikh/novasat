@@ -16,6 +16,7 @@ import {
   LogOut,
   Trophy,
   Users,
+  LineChart,
 } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +26,7 @@ const items = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard },
   { to: "/practice", label: "Practice & Plan", icon: Target },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/projection", label: "Score Projection", icon: LineChart },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/friends", label: "Friends", icon: Users },
   { to: "/quests", label: "Quests", icon: Sparkles },

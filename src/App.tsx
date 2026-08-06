@@ -27,6 +27,7 @@ import Leaderboard from "./pages/Leaderboard.tsx";
 import Friends from "./pages/Friends.tsx";
 import Quests from "./pages/Quests.tsx";
 import Updates from "./pages/Updates.tsx";
+import Projection from "./pages/Projection.tsx";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/coach/:slug" element={<RequireAuth><CoachArticle /></RequireAuth>} />
               <Route path="/weak-areas" element={<Navigate to="/analytics" replace />} />
               <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
+              <Route path="/projection" element={<RequireAuth><Projection /></RequireAuth>} />
               <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
               <Route path="/pet" element={<RequireAuth><Pet /></RequireAuth>} />
               <Route path="/store" element={<RequireAuth><Store /></RequireAuth>} />
