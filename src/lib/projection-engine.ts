@@ -126,8 +126,12 @@ const STAMINA_DROP = 0.25;
 const STAMINA_PENALTY = 15;
 export const CONFIDENCE_BAND = 30;
 
+/** Round a score to the nearest 10 — SAT scores are always reported in 10s. */
+export const roundTo10 = (v: number) => Math.round(v / 10) * 10;
+
 const clampSection = (v: number, cap = SECTION_MAX) =>
   Math.round(Math.min(cap, Math.max(SECTION_MIN, v)));
+
 
 /** Map raw accuracy (0-1) onto the 200-800 scaled-score equivalent. */
 export function accuracyToScaled(accuracy: number, cap = SECTION_MAX): number {
