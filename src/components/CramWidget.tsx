@@ -54,7 +54,7 @@ export function computeCramTopics(mistakes: MistakeRecord[], testDate: string | 
     return c;
   });
 
-  return items.sort((a, b) => b.score - a.score).slice(0, 5);
+  return items.sort((a, b) => b.score - a.score).slice(0, 4);
 }
 
 export function CramWidget({ mistakes, testDate, variant = "dashboard" }: Props) {
@@ -66,7 +66,7 @@ export function CramWidget({ mistakes, testDate, variant = "dashboard" }: Props)
   if (items.length === 0) {
     if (variant === "compact") return null;
     return (
-      <GlassCard>
+      <GlassCard className="h-full">
         <div className="flex items-center gap-2 mb-2">
           <Flame className="h-4 w-4 text-warning" />
           <h3 className="font-display text-lg font-semibold">Cram This Week</h3>
@@ -79,7 +79,7 @@ export function CramWidget({ mistakes, testDate, variant = "dashboard" }: Props)
   }
 
   return (
-    <GlassCard variant={variant === "dashboard" ? "cyan" : undefined}>
+    <GlassCard variant={variant === "dashboard" ? "cyan" : undefined} className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Flame className="h-4 w-4 text-warning" />
@@ -89,7 +89,7 @@ export function CramWidget({ mistakes, testDate, variant = "dashboard" }: Props)
           <span className="text-xs font-mono text-muted-foreground">{days}d to test</span>
         )}
       </div>
-      <ul className="space-y-2">
+      <ul className="space-y-2 flex-1">
         {items.map((c) => (
           <li key={c.topic}>
             <Link
