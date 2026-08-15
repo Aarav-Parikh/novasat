@@ -26,6 +26,8 @@ import { deriveNovaStats } from "@/lib/novaprep-stats";
 import { computeReadiness } from "@/lib/readiness";
 import { ReadinessCard } from "@/components/ReadinessCard";
 import { CramWidget } from "@/components/CramWidget";
+import { toast } from "@/hooks/use-toast";
+
 
 type Quest = { key: string; label: string; desc: string; goal: number; progress: number; reward_sp: number; kind: string; unit?: string };
 type QuestsPayload = { daily: Quest[]; weekly: Quest[]; claimed: { quest_key: string }[] } | null;
@@ -50,19 +52,40 @@ const Dashboard = () => {
   );
 
   const [quests, setQuests] = useState<QuestsPayload>(null);
+  const [claiming, setClaiming] = useState<string | null>(null);
+
+  const loadQuests = async () => {
+    const { data } = await supabase.rpc("list_quests");
+    setQuests(data as any);
+  };
+
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const { data } = await supabase.rpc("list_quests");
-      setQuests(data as any);
-    })();
+    loadQuests();
   }, [user?.id, sessions.length]);
+
+  const claimQuest = async (q: Quest) => {
+    setClaiming(q.key);
+    const { data, error } = await supabase.rpc("claim_quest", { _quest_key: q.key });
+    setClaiming(null);
+    const res = data as { ok?: boolean; reason?: string; reward_sp?: number } | null;
+    if (error || !res?.ok) {
+      toast({
+        title: "Not yet",
+        description: res?.reason === "incomplete" ? "Finish the quest first." : res?.reason ?? error?.message,
+      });
+      return;
+    }
+    toast({ title: `+${res.reward_sp} SP claimed`, description: q.label });
+    loadQuests();
+  };
 
   const projectedRange = stats.projectedRange;
   const targetSuffix = profile?.target_score ? ` / ${profile.target_score}` : "";
 
   const dailyPreview = (quests?.daily ?? []).slice(0, 3);
   const claimedKeys = new Set((quests?.claimed ?? []).map((c) => c.quest_key));
+
 
   return (
     <AppLayout>

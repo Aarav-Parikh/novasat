@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { AppSidebar } from "./AppSidebar";
 import { MobileNav } from "./MobileNav";
+import { PageNav } from "./PageNav";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -10,9 +11,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <MobileNav />
-          <main className="flex-1 px-4 sm:px-8 py-6 sm:py-10 max-w-[1400px] w-full mx-auto animate-fade-in">
-            {children}
-          </main>
+          <div className="flex-1 w-full max-w-[1600px] mx-auto flex gap-8 px-4 sm:px-8 py-6 sm:py-10">
+            <main className="flex-1 min-w-0 animate-fade-in">{children}</main>
+            <PageNav />
+          </div>
         </div>
       </div>
     </div>

@@ -15,18 +15,23 @@ const UPDATES: Entry[] = [
     version: "v1.0.0",
     date: "Initial launch",
     features: [
-      "Adaptive SAT practice with Reading & Writing drills, Math drills, short simulations, and full-length simulations.",
-      "Personalized daily plans and concept-specific reinforcement built from each student's performance.",
-      "Post-test answer keys, flashcards, concept breakdowns, error categorization, patterns, and solving shortcuts.",
-      "Score projections, readiness tracking, pacing analytics, weak-area diagnostics, session history, and badges.",
-      "Friends, weekly leaderboards, daily and weekly SP quests, and a customizable study companion named Buddy.",
-      "Google and email sign-in, synced profiles, cloud-saved progress, and an administrator activity console.",
+      "Adaptive SAT practice: Reading & Writing drills, Math drills, short simulations, and full-length two-module simulations with strict topic and section locking.",
+      "Personalized daily plans that rebuild every day from your latest misses, plus targeted weak-concept and reinforcement drills.",
+      "Post-Test Review Dashboard: full answer key, flip-card flashcards, error categorization, concept breakdowns, and per-question breakdowns with the underlying pattern and a faster shortcut.",
+      "Reason-tagged option eliminator and question flagging with subject-aware reasons for Math and Reading & Writing.",
+      "Adaptive pacing bars on full simulation modules that show whether you are on or off pace, then fade away once you have calibrated.",
+      "Score Projection Engine: weighted Bayesian projection with confidence range, activity impact timeline, latent-ability breakdown, and a what-if simulator.",
+      "Analytics and readiness: accuracy trends, pacing telemetry, weak-area diagnostics, session history, badges, and a Cram This Week shortlist.",
+      "Daily and weekly SP quests, claimable straight from the dashboard, plus a daily login bonus.",
+      "Buddy, your study companion: XP levels, energy, treats, cosmetics, and an SP store.",
+      "Google and email sign-in, synced cloud profiles and progress, and an administrator activity console.",
     ],
     fixes: [
       "Initial public release of NovaSAT.",
     ],
   },
 ];
+
 
 
 export default function Updates() {

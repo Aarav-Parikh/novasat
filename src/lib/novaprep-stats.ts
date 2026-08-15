@@ -1,6 +1,8 @@
 import { MistakeRecord } from "./novaprep-data";
 import { SessionSummary } from "./novaprep-store";
 import { buildResponsesFromHistory, predictSATScore } from "./score-engine";
+import { roundTo10 } from "./projection-engine";
+
 
 export function deriveNovaStats(
   sessions: SessionSummary[],
@@ -28,9 +30,11 @@ export function deriveNovaStats(
   const targetAnchor = targetScore
     ? Math.min(30, Math.max(-30, (targetScore - prediction.total) / 18))
     : 0;
-  const projectedScore = Math.min(1600, Math.max(400, Math.round(prediction.total + xpNudge + targetAnchor)));
-  const projectedLow = Math.min(projectedScore, Math.max(400, prediction.low + Math.round(xpNudge)));
-  const projectedHigh = Math.min(1600, Math.max(projectedScore, prediction.high + Math.round(xpNudge)));
+  const rawProjected = Math.min(1600, Math.max(400, Math.round(prediction.total + xpNudge + targetAnchor)));
+  const projectedScore = roundTo10(rawProjected);
+  const projectedLow = roundTo10(Math.min(projectedScore, Math.max(400, prediction.low + Math.round(xpNudge))));
+  const projectedHigh = roundTo10(Math.min(1600, Math.max(projectedScore, prediction.high + Math.round(xpNudge))));
+
 
   return {
     totalAnswered,

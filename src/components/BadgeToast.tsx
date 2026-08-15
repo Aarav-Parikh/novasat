@@ -1,9 +1,32 @@
 import { toast } from "sonner";
 import { BadgeDef } from "@/lib/badges";
 
+// Badge toasts are queued so they appear one after another instead of all at once.
+const queue: BadgeDef[] = [];
+let draining = false;
+const GAP_MS = 1600;
+
+function drain() {
+  if (draining) return;
+  const next = queue.shift();
+  if (!next) return;
+  draining = true;
+  renderBadgeToast(next);
+  window.setTimeout(() => {
+    draining = false;
+    drain();
+  }, GAP_MS);
+}
+
 export function showBadgeToast(badge: BadgeDef) {
+  queue.push(badge);
+  drain();
+}
+
+function renderBadgeToast(badge: BadgeDef) {
   const Icon = badge.icon;
   toast.custom(
+
     () => (
       <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-success/50 bg-background/95 px-4 py-3 shadow-[0_0_40px_hsl(var(--success)/0.55)] backdrop-blur-lg">
         <div className="relative">
