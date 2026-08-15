@@ -255,23 +255,24 @@ export function runProjection(
   }
 
   const sections = SECTIONS.map((section) => {
-    const point = clampSection(baseline[section], caps[section]);
+    const point = roundTo10(clampSection(baseline[section], caps[section]));
     return {
       section,
       point,
-      low: Math.max(SECTION_MIN, point - CONFIDENCE_BAND / 2),
-      high: Math.min(caps[section], point + CONFIDENCE_BAND / 2),
+      low: roundTo10(Math.max(SECTION_MIN, point - CONFIDENCE_BAND / 2)),
+      high: roundTo10(Math.min(caps[section], point + CONFIDENCE_BAND / 2)),
       cap: caps[section],
       routedToEasy: routed[section],
     };
   });
 
-  const total = sections.reduce((s, x) => s + x.point, 0);
+  const total = roundTo10(sections.reduce((s, x) => s + x.point, 0));
 
   return {
     total,
-    totalLow: Math.max(400, total - CONFIDENCE_BAND),
-    totalHigh: Math.min(1600, total + CONFIDENCE_BAND),
+    totalLow: roundTo10(Math.max(400, total - CONFIDENCE_BAND)),
+    totalHigh: roundTo10(Math.min(1600, total + CONFIDENCE_BAND)),
+
     sections,
     applied: applied.reverse(), // newest first for the feed
     skills: opts.skills ?? [],
