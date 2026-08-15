@@ -51,7 +51,7 @@ const Auth = () => {
     localStorage.removeItem(GOOGLE_PENDING_KEY);
     localStorage.removeItem(GOOGLE_ERROR_KEY);
     if (mode === "signup" && !displayName.trim()) {
-      toast({ title: "Username required", description: "Pick a username so friends can find you.", variant: "destructive" });
+      toast({ title: "Username required", description: "Pick a username to personalize your account.", variant: "destructive" });
       return;
     }
     setBusy(true);

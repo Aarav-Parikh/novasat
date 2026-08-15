@@ -23,8 +23,6 @@ import Store from "./pages/Store.tsx";
 import CoachArticle from "./pages/CoachArticle.tsx";
 import AdminUsers from "./pages/admin/Users.tsx";
 import AdminReviews from "./pages/admin/Reviews.tsx";
-import Leaderboard from "./pages/Leaderboard.tsx";
-import Friends from "./pages/Friends.tsx";
 import Quests from "./pages/Quests.tsx";
 import Updates from "./pages/Updates.tsx";
 import Projection from "./pages/Projection.tsx";
@@ -46,8 +44,8 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/app" element={<RequireAuth><Index /></RequireAuth>} />
-              <Route path="/leaderboard" element={<RequireAuth><Leaderboard /></RequireAuth>} />
-              <Route path="/friends" element={<RequireAuth><Friends /></RequireAuth>} />
+              <Route path="/leaderboard" element={<Navigate to="/quests" replace />} />
+              <Route path="/friends" element={<Navigate to="/quests" replace />} />
               <Route path="/quests" element={<RequireAuth><Quests /></RequireAuth>} />
               <Route path="/practice" element={<RequireAuth><Practice /></RequireAuth>} />
               <Route path="/plan" element={<Navigate to="/practice" replace />} />
@@ -69,7 +67,7 @@ const App = () => (
               <Route path="/clubs" element={<Navigate to="/quests" replace />} />
               <Route path="/clubs/:slug" element={<Navigate to="/quests" replace />} />
               <Route path="/share/:slug" element={<Navigate to="/" replace />} />
-              <Route path="/duel/:id" element={<Navigate to="/friends" replace />} />
+              <Route path="/duel/:id" element={<Navigate to="/quests" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
