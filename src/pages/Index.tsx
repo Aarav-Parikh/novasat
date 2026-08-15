@@ -26,6 +26,8 @@ import { deriveNovaStats } from "@/lib/novaprep-stats";
 import { computeReadiness } from "@/lib/readiness";
 import { ReadinessCard } from "@/components/ReadinessCard";
 import { CramWidget } from "@/components/CramWidget";
+import { toast } from "@/hooks/use-toast";
+
 
 type Quest = { key: string; label: string; desc: string; goal: number; progress: number; reward_sp: number; kind: string; unit?: string };
 type QuestsPayload = { daily: Quest[]; weekly: Quest[]; claimed: { quest_key: string }[] } | null;
