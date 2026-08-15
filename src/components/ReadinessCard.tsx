@@ -7,7 +7,7 @@ export function ReadinessCard({ readiness }: { readiness: Readiness }) {
   const color = band === "ahead" ? "text-success" : band === "on-track" ? "text-secondary" : "text-warning";
   const ring = `conic-gradient(hsl(var(--secondary)) ${score * 3.6}deg, hsl(var(--muted)) 0deg)`;
   return (
-    <GlassCard variant="cyan">
+    <GlassCard variant="cyan" className="h-full">
       <div className="flex items-start gap-4">
         <div className="relative h-20 w-20 shrink-0 rounded-full" style={{ background: ring }}>
           <div className="absolute inset-1.5 rounded-full bg-background flex items-center justify-center flex-col">
