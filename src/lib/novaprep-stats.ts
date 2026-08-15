@@ -1,6 +1,8 @@
 import { MistakeRecord } from "./novaprep-data";
 import { SessionSummary } from "./novaprep-store";
 import { buildResponsesFromHistory, predictSATScore } from "./score-engine";
+import { roundTo10 } from "./projection-engine";
+
 
 export function deriveNovaStats(
   sessions: SessionSummary[],
