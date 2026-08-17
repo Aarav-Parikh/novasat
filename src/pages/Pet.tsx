@@ -177,7 +177,7 @@ const Pet = () => {
       <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-6 items-start">
         {/* LEFT: Treats + Buddy level */}
         <div className="space-y-6">
-        <GlassCard variant="cyan" className="!p-6">
+        <GlassCard data-page-section="Treat Pantry" variant="cyan" className="!p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Cookie className="h-5 w-5 text-warning" />
@@ -363,7 +363,7 @@ const Pet = () => {
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-display text-2xl font-semibold">Wardrobe</h2>
+            <h2 data-page-section="Wardrobe" className="font-display text-2xl font-semibold">Wardrobe</h2>
             <p className="text-sm text-muted-foreground mt-1">
               Equip cosmetics you've bought. Visit the Store to buy more with SP.
             </p>

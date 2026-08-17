@@ -101,7 +101,7 @@ const Store = () => {
         const items = COSMETIC_CATALOG.filter((c) => c.slot === slot);
         return (
           <div key={slot} className="mb-8">
-            <h2 data-page-section="Cosmetics" className="font-display text-2xl font-semibold mb-4">
+            <h2 data-page-section={slotLabel[slot]} className="font-display text-2xl font-semibold mb-4">
               {slotLabel[slot]}
             </h2>
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
