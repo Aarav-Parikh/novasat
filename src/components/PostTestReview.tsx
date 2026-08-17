@@ -204,6 +204,33 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
         )}
       </div>
 
+      {loading && (
+        <div className="glass rounded-xl border border-secondary/30 p-4">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-4 w-4 animate-spin text-secondary shrink-0" />
+            <div className="min-w-0">
+              <div className="text-sm font-medium">Generating your personalized breakdown…</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                Explanations, patterns and shortcuts for {missed.length} missed question
+                {missed.length === 1 ? "" : "s"} · {elapsed}s elapsed. Tabs unlock as each part finishes.
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+            <span className={`rounded-full border px-2 py-0.5 ${insightsLoading ? "border-border text-muted-foreground" : "border-success/40 text-success"}`}>
+              {insightsLoading ? "Answer explanations…" : "Answer explanations ready"}
+            </span>
+            <span className={`rounded-full border px-2 py-0.5 ${studyLoading ? "border-border text-muted-foreground" : "border-success/40 text-success"}`}>
+              {studyLoading ? "Flashcards & concepts…" : "Flashcards & concepts ready"}
+            </span>
+          </div>
+          <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-full animate-pulse bg-gradient-to-r from-primary to-secondary" style={{ width: `${insightsLoading && studyLoading ? 35 : 75}%` }} />
+          </div>
+        </div>
+      )}
+
+
       <Tabs defaultValue="answer-key" className="w-full">
         <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full">
           <TabsTrigger value="answer-key" className="gap-1.5"><KeyRound className="h-3.5 w-3.5" /> Answer Key</TabsTrigger>
