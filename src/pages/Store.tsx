@@ -86,7 +86,7 @@ const Store = () => {
         </div>
       </div>
 
-      <GlassCard variant="purple" className="mb-8">
+      <GlassCard data-page-section="Earn SP" variant="purple" className="mb-8">
         <div className="flex items-center gap-2 text-secondary text-xs uppercase tracking-[0.25em]">
           <Coins className="h-3.5 w-3.5" /> Earn SP
         </div>
@@ -101,7 +101,7 @@ const Store = () => {
         const items = COSMETIC_CATALOG.filter((c) => c.slot === slot);
         return (
           <div key={slot} className="mb-8">
-            <h2 className="font-display text-2xl font-semibold mb-4">
+            <h2 data-page-section={slotLabel[slot]} className="font-display text-2xl font-semibold mb-4">
               {slotLabel[slot]}
             </h2>
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">

@@ -75,7 +75,7 @@ const Profile = () => {
   return (
     <AppLayout>
       <div className="grid xl:grid-cols-[0.95fr_1.35fr] gap-6 items-start">
-        <GlassCard variant="purple" className="overflow-hidden">
+        <GlassCard data-page-section="Account" variant="purple" className="overflow-hidden">
           <div className="flex items-center gap-5">
             <Avatar name={profile?.display_name} url={profile?.avatar_url} size={96} className="!h-24 !w-24 text-2xl glow-purple" />
             <div>
@@ -97,7 +97,7 @@ const Profile = () => {
       </div>
 
       <div className="mt-6 grid lg:grid-cols-[0.75fr_1.25fr] gap-6 items-start">
-        <GlassCard variant="cyan">
+        <GlassCard data-page-section="Profile Details" variant="cyan">
           <h2 className="font-display text-2xl font-semibold">Profile Details</h2>
           <div className="mt-4 space-y-3">
             <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Display name" className="w-full rounded-lg border border-border bg-background/50 px-3 py-2 text-sm" />
@@ -130,7 +130,7 @@ const Profile = () => {
 
         <GlassCard>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-2xl font-semibold">Badges</h2>
+            <h2 data-page-section="Badges" className="font-display text-2xl font-semibold">Badges</h2>
             <span className="text-xs font-mono text-muted-foreground">
               {badgeCatalog.filter((b) => b.test(badgeState)).length} / {badgeCatalog.length}
             </span>

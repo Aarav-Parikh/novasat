@@ -96,7 +96,7 @@ export default function Quests() {
         <p className="text-muted-foreground mt-2">Complete quests to stack SP. Daily quests reset every day; weekly quests reset each Monday.</p>
       </div>
 
-      <GlassCard variant="cyan" className="mb-6">
+      <GlassCard data-page-section="How SP Works" variant="cyan" className="mb-6">
         <div className="flex items-center gap-2 text-secondary text-xs uppercase tracking-[0.25em]">
           <Sparkles className="h-3.5 w-3.5" /> How SP works
         </div>
@@ -106,14 +106,14 @@ export default function Quests() {
         </p>
       </GlassCard>
 
-      <GlassCard className="mb-6">
+      <GlassCard data-page-section="Daily Quests" className="mb-6">
         <h2 className="font-display text-2xl font-semibold flex items-center gap-2 mb-4">
           <Target className="h-5 w-5 text-primary" /> Daily quests
         </h2>
         {data ? renderList(data.daily, data.day_key) : <div className="text-sm text-muted-foreground">Loading…</div>}
       </GlassCard>
 
-      <GlassCard variant="purple">
+      <GlassCard data-page-section="Weekly Quests" variant="purple">
         <h2 className="font-display text-2xl font-semibold flex items-center gap-2 mb-4">
           <Trophy className="h-5 w-5 text-secondary" /> Weekly quests
         </h2>

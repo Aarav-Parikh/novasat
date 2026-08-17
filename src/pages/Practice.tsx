@@ -138,7 +138,7 @@ const Practice = () => {
       </div>
 
       {/* Today's plan */}
-      <GlassCard variant="purple" className="mb-5">
+      <GlassCard data-page-section="Today's Plan" variant="purple" className="mb-5">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-widest text-muted-foreground">
@@ -204,7 +204,7 @@ const Practice = () => {
       </div>
 
       {/* Coach note */}
-      <GlassCard variant="purple" className="mb-8">
+      <GlassCard data-page-section="Coach Note" variant="purple" className="mb-8">
         <div className="flex items-start gap-4">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
             <Sparkles className="h-5 w-5 text-white" />
@@ -230,7 +230,7 @@ const Practice = () => {
       </GlassCard>
 
       {/* Core sessions */}
-      <h2 className="font-display text-2xl font-semibold mb-3 flex items-center gap-2">
+      <h2 data-page-section="Sessions" className="font-display text-2xl font-semibold mb-3 flex items-center gap-2">
         <Target className="h-5 w-5 text-primary" /> Sessions
       </h2>
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5 items-stretch mb-10">
@@ -263,7 +263,7 @@ const Practice = () => {
       </div>
 
       {/* Weak concept drills (from coach) */}
-      <h2 className="font-display text-2xl font-semibold mb-3 flex items-center gap-2">
+      <h2 data-page-section="Weak Concept Drills" className="font-display text-2xl font-semibold mb-3 flex items-center gap-2">
         <Sparkles className="h-5 w-5 text-primary" /> Drills for your weak concepts
       </h2>
       <div className="grid md:grid-cols-2 gap-4 mb-10">
@@ -285,7 +285,7 @@ const Practice = () => {
       </div>
 
       {/* Reinforcement */}
-      <h2 className="font-display text-2xl font-semibold mb-3 flex items-center gap-2">
+      <h2 data-page-section="Reinforcement" className="font-display text-2xl font-semibold mb-3 flex items-center gap-2">
         <Repeat className="h-5 w-5 text-secondary" /> Reinforcement drills
       </h2>
       <p className="text-sm text-muted-foreground mb-3 max-w-2xl">Spaced practice on concepts you've already worked on, so they stay sharp.</p>

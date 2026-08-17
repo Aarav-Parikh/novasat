@@ -63,24 +63,58 @@ interface Props {
 
 export function PostTestReview({ missed, answerKey = [] }: Props) {
   const [data, setData] = useState<ReviewData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [studyLoading, setStudyLoading] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [cardIdx, setCardIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
+  const loading = insightsLoading || studyLoading;
+
+  const merge = (patch: Partial<ReviewData>) =>
+    setData((prev) => ({
+      flashcards: patch.flashcards ?? prev?.flashcards ?? [],
+      category_summary: patch.category_summary ?? prev?.category_summary ?? [],
+      concept_breakdowns: patch.concept_breakdowns ?? prev?.concept_breakdowns ?? [],
+      answer_insights: patch.answer_insights ?? prev?.answer_insights ?? [],
+    }));
+
+  // Two smaller parallel generations finish much faster than one giant one,
+  // and each half renders the moment it lands.
   const fetchReview = async () => {
     if (missed.length === 0) return;
-    setLoading(true); setError(null);
-    try {
-      const { data, error } = await supabase.functions.invoke("post-test-review", { body: { missed } });
-      if (error) throw error;
-      setData(data as ReviewData);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load review");
-    } finally { setLoading(false); }
+    setError(null);
+    setData(null);
+    setInsightsLoading(true);
+    setStudyLoading(true);
+
+    const run = async (part: "insights" | "study") => {
+      const { data: res, error: err } = await supabase.functions.invoke("post-test-review", {
+        body: { missed, part },
+      });
+      if (err) throw err;
+      merge(res as Partial<ReviewData>);
+    };
+
+    const [a, b] = await Promise.allSettled([run("insights"), run("study")]);
+    setInsightsLoading(false);
+    setStudyLoading(false);
+    if (a.status === "rejected" && b.status === "rejected") {
+      setError((a.reason as any)?.message ?? "Failed to load review");
+    }
   };
 
   useEffect(() => { fetchReview(); /* eslint-disable-next-line */ }, []);
+
+  useEffect(() => {
+    if (!loading) return;
+    setElapsed(0);
+    const id = window.setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insightsLoading && studyLoading]);
+
 
   const insightsById = useMemo(() => {
     const map = new Map<string, AnswerInsight>();
@@ -170,6 +204,33 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
         )}
       </div>
 
+      {loading && (
+        <div className="glass rounded-xl border border-secondary/30 p-4">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-4 w-4 animate-spin text-secondary shrink-0" />
+            <div className="min-w-0">
+              <div className="text-sm font-medium">Generating your personalized breakdown…</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                Explanations, patterns and shortcuts for {missed.length} missed question
+                {missed.length === 1 ? "" : "s"} · {elapsed}s elapsed. Tabs unlock as each part finishes.
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+            <span className={`rounded-full border px-2 py-0.5 ${insightsLoading ? "border-border text-muted-foreground" : "border-success/40 text-success"}`}>
+              {insightsLoading ? "Answer explanations…" : "Answer explanations ready"}
+            </span>
+            <span className={`rounded-full border px-2 py-0.5 ${studyLoading ? "border-border text-muted-foreground" : "border-success/40 text-success"}`}>
+              {studyLoading ? "Flashcards & concepts…" : "Flashcards & concepts ready"}
+            </span>
+          </div>
+          <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-full animate-pulse bg-gradient-to-r from-primary to-secondary" style={{ width: `${insightsLoading && studyLoading ? 35 : 75}%` }} />
+          </div>
+        </div>
+      )}
+
+
       <Tabs defaultValue="answer-key" className="w-full">
         <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full">
           <TabsTrigger value="answer-key" className="gap-1.5"><KeyRound className="h-3.5 w-3.5" /> Answer Key</TabsTrigger>
@@ -196,7 +257,7 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
               </TabsContent>
             </Tabs>
           )}
-          {loading && (
+          {insightsLoading && (
             <div className="mt-3 text-xs text-muted-foreground inline-flex items-center gap-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading detailed AI breakdown for each wrong answer…
             </div>
@@ -210,7 +271,7 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
               <Sparkles className="h-6 w-6 text-success mx-auto" />
               <div className="font-display text-lg font-semibold mt-2">Perfect run — no flashcards needed.</div>
             </div>
-          ) : loading ? (
+          ) : studyLoading ? (
             <div className="glass p-6 flex items-center gap-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin text-secondary" /> Generating flashcards…
             </div>
@@ -312,7 +373,7 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
         <TabsContent value="concepts" className="mt-4">
           {missed.length === 0 ? (
             <div className="glass p-6 text-center text-sm text-muted-foreground">Nothing to break down — perfect run!</div>
-          ) : loading ? (
+          ) : studyLoading ? (
             <div className="glass p-6 flex items-center gap-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin text-secondary" /> Generating concept breakdowns…
             </div>
@@ -346,7 +407,7 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
         <TabsContent value="errors" className="mt-4">
           {missed.length === 0 ? (
             <div className="glass p-6 text-center text-sm text-muted-foreground">No errors to categorize.</div>
-          ) : loading ? (
+          ) : studyLoading ? (
             <div className="glass p-6 flex items-center gap-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin text-secondary" /> Analyzing error patterns…
             </div>

@@ -102,7 +102,7 @@ const Dashboard = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div data-page-section="Overview" className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <GlassCard className="!p-5">
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
             <Flame className="h-3.5 w-3.5 text-warning" />
@@ -135,13 +135,16 @@ const Dashboard = () => {
         </GlassCard>
       </div>
 
-      <div className="grid lg:grid-cols-[1.35fr_1fr] gap-6 mb-6 items-start">
+      <div
+        data-page-section="Readiness & Cram"
+        className="grid lg:grid-cols-2 gap-6 mb-6 items-stretch"
+      >
         <ReadinessCard readiness={readiness} />
         <CramWidget mistakes={mistakes} testDate={profile?.test_date} />
       </div>
 
       {/* Quests preview */}
-      <GlassCard variant="cyan" className="mb-6">
+      <GlassCard data-page-section="Quests" variant="cyan" className="mb-6">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             <span className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
@@ -162,7 +165,7 @@ const Dashboard = () => {
               const done = q.progress >= q.goal;
               const pct = Math.min(100, Math.round((q.progress / Math.max(1, q.goal)) * 100));
               return (
-                <li key={q.key} className={`rounded-lg border p-3 ${claimed ? "border-success/40 bg-success/5" : done ? "border-secondary/40 bg-secondary/5" : "border-border/60 bg-background/40"}`}>
+                <li key={q.key} className={`flex flex-col rounded-lg border p-3 ${claimed ? "border-success/40 bg-success/5" : done ? "border-secondary/40 bg-secondary/5" : "border-border/60 bg-background/40"}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="text-sm font-medium leading-tight">{q.label}</div>
                     <span className="inline-flex items-center gap-1 text-[11px] font-mono text-secondary">
@@ -173,8 +176,25 @@ const Dashboard = () => {
                     <div className="h-full bg-gradient-to-r from-primary to-secondary" style={{ width: `${pct}%` }} />
                   </div>
                   <div className="mt-1.5 text-[11px] text-muted-foreground flex items-center gap-1">
-                    {claimed ? (<><CheckCircle2 className="h-3 w-3 text-success" /> Claimed</>) : `${q.progress} / ${q.goal}`}
+                    {q.unit === "seconds"
+                      ? `${Math.floor(q.progress / 60)} / ${Math.floor(q.goal / 60)} min`
+                      : `${q.progress} / ${q.goal}`}
                   </div>
+                  <button
+                    onClick={() => claimQuest(q)}
+                    disabled={!done || claimed || claiming === q.key}
+                    className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold bg-primary text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {claimed ? (
+                      <><CheckCircle2 className="h-3.5 w-3.5" /> Claimed</>
+                    ) : claiming === q.key ? (
+                      "Claiming…"
+                    ) : done ? (
+                      `Claim ${q.reward_sp} SP`
+                    ) : (
+                      "In progress"
+                    )}
+                  </button>
                 </li>
               );
             })}
@@ -182,7 +202,8 @@ const Dashboard = () => {
         )}
       </GlassCard>
 
-      <div className="grid xl:grid-cols-[1.45fr_0.85fr] gap-6 items-start">
+
+      <div data-page-section="Today's Routine" className="grid xl:grid-cols-[1.45fr_0.85fr] gap-6 items-start">
         <GlassCard variant="purple">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
