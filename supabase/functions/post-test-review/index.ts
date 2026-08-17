@@ -129,9 +129,9 @@ Deno.serve(async (req) => {
           model: MODEL,
           messages: [
             { role: "system", content: "Return only valid JSON. No prose, no markdown fences." },
-            { role: "user", content: buildPrompt(body.missed) },
+            { role: "user", content: buildPrompt(body.missed, body.part) },
           ],
-          temperature: 0.5,
+          temperature: 0.4,
           response_format: { type: "json_object" },
         }),
       });
