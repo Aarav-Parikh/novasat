@@ -38,10 +38,7 @@ function buildPrompt(missed: Missed[], part: Part | undefined) {
     flag: m.flag_category ?? null,
     eliminations: m.eliminations ?? {},
   }));
-  return `You are an elite SAT tutor. For each MISSED question, produce a rich diagnostic. Return a single JSON object with this EXACT shape and NOTHING else:
-
-{
-  "flashcards": [
+  const studyShape = `  "flashcards": [
     {
       "front": "concept question (<=110 chars)",
       "concept": "the exact concept/rule being tested (<=140 chars)",
@@ -56,8 +53,9 @@ function buildPrompt(missed: Missed[], part: Part | undefined) {
   ],
   "concept_breakdowns": [
     { "topic": "topic name", "what_to_study": "3-sentence breakdown of the concept, pitfalls, and how it shows up on the SAT", "drills": ["short prompt 1", "short prompt 2"] }
-  ],
-  "answer_insights": [
+  ]`;
+
+  const insightShape = `  "answer_insights": [
     {
       "question_id": "matches input question_id",
       "why_correct": "2-3 sentences explaining precisely WHY the correct answer is right",
@@ -67,19 +65,34 @@ function buildPrompt(missed: Missed[], part: Part | undefined) {
       "underlying_pattern": "2-3 sentences naming the recurring SAT pattern/question archetype behind this item and how to recognize it instantly next time",
       "shortcut": "a concrete faster route: plugging in numbers, elimination heuristic, structure clue, or algebraic shortcut (<=240 chars)"
     }
-  ]
+  ]`;
+
+  const shape =
+    part === "study" ? studyShape : part === "insights" ? insightShape : `${studyShape},\n${insightShape}`;
+
+  const rules = [
+    part === "insights"
+      ? "- answer_insights: exactly one entry per missed question, keyed by the input question_id. Do NOT invent question_ids."
+      : "- 1 flashcard per unique concept in the missed set, max 10.",
+    "- Use real Unicode math (√ π ² ³ ≤ ≥), never LaTeX. No markdown. No prose outside the JSON.",
+    part === "insights"
+      ? "- ALWAYS fill underlying_pattern and shortcut: students need the repeatable pattern and the fast trick.\n- Be blunt about what tempting answers look like — students learn from concrete trap-spotting.\n- Be dense but efficient: no filler sentences."
+      : "- Keep every field tight and concrete — no filler sentences.",
+  ].join("\n");
+
+  return `You are an elite SAT tutor. For each MISSED question, produce a rich diagnostic. Return a single JSON object with this EXACT shape and NOTHING else:
+
+{
+${shape}
 }
 
 Rules:
-- 1 flashcard per unique concept in the missed set, max 10.
-- answer_insights: one entry per missed question, keyed by the input question_id. Do NOT invent question_ids.
-- Use real Unicode math (√ π ² ³ ≤ ≥), never LaTeX. No markdown. No prose outside the JSON.
-- ALWAYS fill underlying_pattern and shortcut: students need the repeatable pattern and the fast trick, not just why the answer is right.
-- Be blunt about what tempting answers look like — students learn from concrete trap-spotting.
+${rules}
 
 MISSED QUESTIONS:
 ${JSON.stringify(trimmed)}`;
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
