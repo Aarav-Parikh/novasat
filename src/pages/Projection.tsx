@@ -52,9 +52,9 @@ const Projection = () => {
           </p>
         </header>
 
-        <ScoreTracker result={result} />
+        <div data-page-section="Score Tracker"><ScoreTracker result={result} /></div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
+        <div data-page-section="Activity Impact" className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
           <ActivityImpactFeed items={result.applied} />
           <div className="space-y-6">
             <LatentAbilityPanel skills={skills} />
@@ -75,11 +75,11 @@ const Projection = () => {
           </div>
         </div>
 
-        <ProjectionSimulator
+        <div data-page-section="Simulator"><ProjectionSimulator
           simCount={sims.length}
           onSubmit={(a) => setSims((prev) => [...prev, a])}
           onReset={() => setSims([])}
-        />
+        /></div>
       </div>
     </AppLayout>
   );

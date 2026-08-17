@@ -120,7 +120,7 @@ const Analytics = () => {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-5">
-        <GlassCard variant="cyan" className="lg:col-span-2">
+        <GlassCard data-page-section="Projected Score" variant="cyan" className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-display text-xl font-semibold">Projected Score</h2>
@@ -219,7 +219,7 @@ const Analytics = () => {
         </GlassCard>
 
         <div className="lg:col-span-3">
-          <h2 className="font-display text-2xl font-semibold mb-3">Weak areas</h2>
+          <h2 data-page-section="Weak Areas" className="font-display text-2xl font-semibold mb-3">Weak areas</h2>
           {weakAreas.length === 0 ? (
             <GlassCard className="text-center text-muted-foreground py-16">
               <Target className="h-10 w-10 mx-auto mb-4 text-muted-foreground/60" />
@@ -270,7 +270,7 @@ const Analytics = () => {
           )}
         </div>
 
-        <GlassCard className="lg:col-span-3">
+        <GlassCard data-page-section="Pacing" className="lg:col-span-3">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-xl font-semibold">Avg Time on Weak-Area Questions</h2>
             <span className="text-xs text-muted-foreground">target ≤ 75s</span>
@@ -300,7 +300,7 @@ const Analytics = () => {
           )}
         </GlassCard>
 
-        <GlassCard className="lg:col-span-2">
+        <GlassCard data-page-section="Session Mix" className="lg:col-span-2">
           <h2 className="font-display text-xl font-semibold mb-4">Session Mix</h2>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
@@ -322,7 +322,7 @@ const Analytics = () => {
         </GlassCard>
 
         <GlassCard>
-          <h2 className="font-display text-xl font-semibold">Recent Sessions</h2>
+          <h2 data-page-section="Recent Sessions" className="font-display text-xl font-semibold">Recent Sessions</h2>
           <div className="mt-4 space-y-2">
             {sessions.slice(-5).reverse().map((s, i) => (
               <div
