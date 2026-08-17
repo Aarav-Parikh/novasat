@@ -1,7 +1,7 @@
-import { ReactNode } from "react";
+import { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-interface GlassCardProps {
+interface GlassCardProps extends HTMLAttributes<HTMLElement> {
   children: ReactNode;
   className?: string;
   variant?: "default" | "purple" | "cyan";
@@ -13,10 +13,14 @@ export function GlassCard({
   className,
   variant = "default",
   as: Tag = "div",
+  ...rest
 }: GlassCardProps) {
   const variantClass =
     variant === "purple" ? "glass-purple" : variant === "cyan" ? "glass-cyan" : "";
   return (
-    <Tag className={cn("glass", variantClass, "p-6", className)}>{children}</Tag>
+    <Tag {...rest} className={cn("glass", variantClass, "p-6", className)}>
+      {children}
+    </Tag>
   );
 }
+
