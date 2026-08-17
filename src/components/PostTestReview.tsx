@@ -63,24 +63,58 @@ interface Props {
 
 export function PostTestReview({ missed, answerKey = [] }: Props) {
   const [data, setData] = useState<ReviewData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [studyLoading, setStudyLoading] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [cardIdx, setCardIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
+  const loading = insightsLoading || studyLoading;
+
+  const merge = (patch: Partial<ReviewData>) =>
+    setData((prev) => ({
+      flashcards: patch.flashcards ?? prev?.flashcards ?? [],
+      category_summary: patch.category_summary ?? prev?.category_summary ?? [],
+      concept_breakdowns: patch.concept_breakdowns ?? prev?.concept_breakdowns ?? [],
+      answer_insights: patch.answer_insights ?? prev?.answer_insights ?? [],
+    }));
+
+  // Two smaller parallel generations finish much faster than one giant one,
+  // and each half renders the moment it lands.
   const fetchReview = async () => {
     if (missed.length === 0) return;
-    setLoading(true); setError(null);
-    try {
-      const { data, error } = await supabase.functions.invoke("post-test-review", { body: { missed } });
-      if (error) throw error;
-      setData(data as ReviewData);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load review");
-    } finally { setLoading(false); }
+    setError(null);
+    setData(null);
+    setInsightsLoading(true);
+    setStudyLoading(true);
+
+    const run = async (part: "insights" | "study") => {
+      const { data: res, error: err } = await supabase.functions.invoke("post-test-review", {
+        body: { missed, part },
+      });
+      if (err) throw err;
+      merge(res as Partial<ReviewData>);
+    };
+
+    const [a, b] = await Promise.allSettled([run("insights"), run("study")]);
+    setInsightsLoading(false);
+    setStudyLoading(false);
+    if (a.status === "rejected" && b.status === "rejected") {
+      setError((a.reason as any)?.message ?? "Failed to load review");
+    }
   };
 
   useEffect(() => { fetchReview(); /* eslint-disable-next-line */ }, []);
+
+  useEffect(() => {
+    if (!loading) return;
+    setElapsed(0);
+    const id = window.setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insightsLoading && studyLoading]);
+
 
   const insightsById = useMemo(() => {
     const map = new Map<string, AnswerInsight>();
