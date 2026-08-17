@@ -230,7 +230,7 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
               </TabsContent>
             </Tabs>
           )}
-          {loading && (
+          {insightsLoading && (
             <div className="mt-3 text-xs text-muted-foreground inline-flex items-center gap-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading detailed AI breakdown for each wrong answer…
             </div>
@@ -244,7 +244,7 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
               <Sparkles className="h-6 w-6 text-success mx-auto" />
               <div className="font-display text-lg font-semibold mt-2">Perfect run — no flashcards needed.</div>
             </div>
-          ) : loading ? (
+          ) : studyLoading ? (
             <div className="glass p-6 flex items-center gap-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin text-secondary" /> Generating flashcards…
             </div>
@@ -346,7 +346,7 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
         <TabsContent value="concepts" className="mt-4">
           {missed.length === 0 ? (
             <div className="glass p-6 text-center text-sm text-muted-foreground">Nothing to break down — perfect run!</div>
-          ) : loading ? (
+          ) : studyLoading ? (
             <div className="glass p-6 flex items-center gap-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin text-secondary" /> Generating concept breakdowns…
             </div>
@@ -380,7 +380,7 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
         <TabsContent value="errors" className="mt-4">
           {missed.length === 0 ? (
             <div className="glass p-6 text-center text-sm text-muted-foreground">No errors to categorize.</div>
-          ) : loading ? (
+          ) : studyLoading ? (
             <div className="glass p-6 flex items-center gap-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin text-secondary" /> Analyzing error patterns…
             </div>
