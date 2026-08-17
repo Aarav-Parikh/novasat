@@ -203,7 +203,7 @@ const Dashboard = () => {
       </GlassCard>
 
 
-      <div className="grid xl:grid-cols-[1.45fr_0.85fr] gap-6 items-start">
+      <div data-page-section="Today's Routine" className="grid xl:grid-cols-[1.45fr_0.85fr] gap-6 items-start">
         <GlassCard variant="purple">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
