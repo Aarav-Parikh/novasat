@@ -18,13 +18,14 @@ type Missed = {
   eliminations?: Record<string, string>;
 };
 
-type ReviewPayload = { missed: Missed[] };
+type Part = "insights" | "study";
+type ReviewPayload = { missed: Missed[]; part?: Part };
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
 const TIMEOUT_MS = 55_000;
 
-function buildPrompt(missed: Missed[]) {
+function buildPrompt(missed: Missed[], part: Part | undefined) {
   const trimmed = missed.slice(0, 14).map((m, i) => ({
     n: i + 1,
     question_id: m.question_id,
