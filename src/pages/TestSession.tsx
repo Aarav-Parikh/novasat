@@ -55,9 +55,29 @@ const shuffleChoices = (q: Question): Question => {
 };
 
 const isSkipped = (answer: AnswerValue | undefined) => answer === "__skipped__";
+// Numeric value of an SPR answer, accepting fractions, decimals, percents.
+const sprValue = (raw: string): number | null => {
+  const t = raw.replace(/[%\s]/g, "");
+  if (!t) return null;
+  const frac = /^(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/.exec(t);
+  if (frac) {
+    const d = Number(frac[2]);
+    return d === 0 ? null : Number(frac[1]) / d;
+  }
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+};
+
 const isCorrectAnswer = (q: Question, answer: AnswerValue | undefined) => {
   if (answer === undefined || isSkipped(answer)) return false;
-  if (q.responseType === "spr") return normalizeSPR(answer) === normalizeSPR(q.correctText ?? q.choices[q.correct]);
+  if (q.responseType === "spr") {
+    const expected = normalizeSPR(q.correctText ?? q.choices[q.correct]);
+    const given = normalizeSPR(answer);
+    if (given === expected) return true;
+    const a = sprValue(given);
+    const b = sprValue(expected);
+    return a !== null && b !== null && Math.abs(a - b) < 1e-6;
+  }
   return answer === q.correct;
 };
 const answerIndex = (answer: AnswerValue | undefined) => typeof answer === "number" ? answer : null;
@@ -154,7 +174,7 @@ const TestSession = () => {
   };
 
   // Normalize the answer key so the graded correct index ALWAYS points at the
-  //真 correct choice. Generators sometimes return an index that disagrees with
+  // truly correct choice. Generators sometimes return an index that disagrees with
   // correctText — when that happens the text wins, because it is what the
   // explanation refers to.
   const normalizeKey = (question: Question): Question => {
