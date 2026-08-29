@@ -153,14 +153,44 @@ const TestSession = () => {
     if (current) setTimeByQuestion((prev) => ({ ...prev, [current.id]: (prev[current.id] ?? 0) + elapsed }));
   };
 
-  const prepareQuestions = (qs: Question[]): Question[] => qs.map((question): Question => shuffleChoices({
+  // Normalize the answer key so the graded correct index ALWAYS points at the
+  //真 correct choice. Generators sometimes return an index that disagrees with
+  // correctText — when that happens the text wins, because it is what the
+  // explanation refers to.
+  const normalizeKey = (question: Question): Question => {
+    if (question.responseType === "spr") return question;
+    const norm = (s: string) => String(s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+    const choices = question.choices ?? [];
+    let correct =
+      Number.isInteger(question.correct) && question.correct >= 0 && question.correct < choices.length
+        ? question.correct
+        : 0;
+    const wanted = norm(question.correctText ?? "");
+    if (wanted) {
+      const exact = choices.findIndex((c) => norm(c) === wanted);
+      if (exact >= 0) correct = exact;
+      else {
+        // Model returned a letter ("C") or "C) 42" style answer text.
+        const letter = /^\(?([a-d])[)\.\:]?$/.exec(wanted)?.[1];
+        if (letter) correct = "abcd".indexOf(letter);
+        else {
+          const stripped = wanted.replace(/^\(?[a-d][)\.\:]\s*/, "");
+          const loose = choices.findIndex((c) => norm(c) === stripped);
+          if (loose >= 0) correct = loose;
+        }
+      }
+    }
+    if (correct < 0 || correct >= choices.length) correct = 0;
+    return { ...question, correct, correctText: choices[correct] };
+  };
+
+  const prepareQuestions = (qs: Question[]): Question[] => qs.map((question): Question => shuffleChoices(normalizeKey({
     ...question,
     responseType: question.section === "Math" && question.responseType === "spr" ? "spr" : "multiple-choice",
-    correct: Number.isInteger(question.correct) && question.correct >= 0 && question.correct <= 3 ? question.correct : 0,
-    correctText: question.responseType === "spr" ? question.correctText : question.choices[question.correct] ?? question.correctText,
     prompt: question.responseType === "spr" ? question.prompt : stripInlineChoices(question.prompt),
     explanation: cleanExplanation(question.explanation),
-  })).filter((question) => question.responseType === "spr" || Boolean(question.choices[question.correct]));
+  }))).filter((question) => question.responseType === "spr" || Boolean(question.choices[question.correct]));
+
 
   const loadQuestions = async (bias: "balanced" | "easier" | "harder", targetModule = module) => {
     setLoading(true);
