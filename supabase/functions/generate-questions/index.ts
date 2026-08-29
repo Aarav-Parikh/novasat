@@ -95,7 +95,9 @@ function sanitizeGeneratedQuestion(q: GeneratedQuestion): GeneratedQuestion | nu
     const candidate = correctText || choices[correct];
     if (!candidate || !numericAnswerPattern.test(candidate)) return null;
     correctText = candidate;
-    if (!choices.some((choice) => cleanText(choice).toLowerCase() === correctText.toLowerCase())) choices[correct] = correctText;
+    const idx = choices.findIndex((choice) => cleanText(choice).toLowerCase() === correctText.toLowerCase());
+    if (idx >= 0) correct = idx;
+    else choices[correct] = correctText;
   }
 
   return {
