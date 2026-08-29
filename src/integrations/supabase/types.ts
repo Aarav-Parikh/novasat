@@ -35,6 +35,39 @@ export type Database = {
         }
         Relationships: []
       }
+      baseline_scores: {
+        Row: {
+          created_at: string
+          id: string
+          math_score: number
+          rw_score: number
+          taken_on: string
+          test_label: string
+          test_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          math_score: number
+          rw_score: number
+          taken_on?: string
+          test_label: string
+          test_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          math_score?: number
+          rw_score?: number
+          taken_on?: string
+          test_label?: string
+          test_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       club_members: {
         Row: {
           club_id: string

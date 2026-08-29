@@ -63,7 +63,7 @@ export function PageNav() {
   if (sections.length < 2) return null;
 
   return (
-    <aside className="hidden xl:block w-56 shrink-0">
+    <aside className="hidden lg:block w-52 xl:w-56 shrink-0">
       <div className="sticky top-8 pr-2">
         <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-3 pl-3">
           On this page

@@ -87,11 +87,10 @@ const Pet = () => {
   const mult = spMultiplierFromPet(mood);
 
   const onFeedOne = async () => {
-    if (treats < 1) return;
-    if (mood === "asleep") {
+    if (treats < 1) {
       toast({
-        title: "Buddy is asleep",
-        description: "Complete the Wake-Up Quiz to revive them before feeding.",
+        title: "No treats yet",
+        description: "Every 5 correct answers in a drill or simulation earns a treat.",
         variant: "destructive",
       });
       return;
@@ -101,6 +100,12 @@ const Pet = () => {
     setFeeding(false);
     if (ok) {
       toast({ title: "+5% energy", description: "Yum! Buddy munched a treat." });
+    } else {
+      toast({
+        title: "Couldn't feed Buddy",
+        description: "Your treats didn't go through. Try again in a moment.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -201,13 +206,13 @@ const Pet = () => {
           <div className="mt-5 grid gap-2">
             <button
               onClick={onFeedOne}
-              disabled={treats < 1 || feeding || mood === "asleep"}
+              disabled={treats < 1 || feeding}
               className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-warning to-warning/70 px-4 py-3 text-sm font-semibold text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Cookie className="h-4 w-4" />
               {feeding ? "Feeding…" : "Feed 1 Treat (+5%)"}
             </button>
-            {treats >= 5 && mood !== "asleep" && (
+            {treats >= 5 && (
               <button
                 onClick={async () => {
                   const n = Math.min(treats, Math.ceil((100 - energy) / 5));

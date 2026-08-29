@@ -55,9 +55,29 @@ const shuffleChoices = (q: Question): Question => {
 };
 
 const isSkipped = (answer: AnswerValue | undefined) => answer === "__skipped__";
+// Numeric value of an SPR answer, accepting fractions, decimals, percents.
+const sprValue = (raw: string): number | null => {
+  const t = raw.replace(/[%\s]/g, "");
+  if (!t) return null;
+  const frac = /^(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/.exec(t);
+  if (frac) {
+    const d = Number(frac[2]);
+    return d === 0 ? null : Number(frac[1]) / d;
+  }
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+};
+
 const isCorrectAnswer = (q: Question, answer: AnswerValue | undefined) => {
   if (answer === undefined || isSkipped(answer)) return false;
-  if (q.responseType === "spr") return normalizeSPR(answer) === normalizeSPR(q.correctText ?? q.choices[q.correct]);
+  if (q.responseType === "spr") {
+    const expected = normalizeSPR(q.correctText ?? q.choices[q.correct]);
+    const given = normalizeSPR(answer);
+    if (given === expected) return true;
+    const a = sprValue(given);
+    const b = sprValue(expected);
+    return a !== null && b !== null && Math.abs(a - b) < 1e-6;
+  }
   return answer === q.correct;
 };
 const answerIndex = (answer: AnswerValue | undefined) => typeof answer === "number" ? answer : null;
@@ -153,14 +173,44 @@ const TestSession = () => {
     if (current) setTimeByQuestion((prev) => ({ ...prev, [current.id]: (prev[current.id] ?? 0) + elapsed }));
   };
 
-  const prepareQuestions = (qs: Question[]): Question[] => qs.map((question): Question => shuffleChoices({
+  // Normalize the answer key so the graded correct index ALWAYS points at the
+  // truly correct choice. Generators sometimes return an index that disagrees with
+  // correctText — when that happens the text wins, because it is what the
+  // explanation refers to.
+  const normalizeKey = (question: Question): Question => {
+    if (question.responseType === "spr") return question;
+    const norm = (s: string) => String(s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+    const choices = question.choices ?? [];
+    let correct =
+      Number.isInteger(question.correct) && question.correct >= 0 && question.correct < choices.length
+        ? question.correct
+        : 0;
+    const wanted = norm(question.correctText ?? "");
+    if (wanted) {
+      const exact = choices.findIndex((c) => norm(c) === wanted);
+      if (exact >= 0) correct = exact;
+      else {
+        // Model returned a letter ("C") or "C) 42" style answer text.
+        const letter = /^\(?([a-d])[)\.\:]?$/.exec(wanted)?.[1];
+        if (letter) correct = "abcd".indexOf(letter);
+        else {
+          const stripped = wanted.replace(/^\(?[a-d][)\.\:]\s*/, "");
+          const loose = choices.findIndex((c) => norm(c) === stripped);
+          if (loose >= 0) correct = loose;
+        }
+      }
+    }
+    if (correct < 0 || correct >= choices.length) correct = 0;
+    return { ...question, correct, correctText: choices[correct] };
+  };
+
+  const prepareQuestions = (qs: Question[]): Question[] => qs.map((question): Question => shuffleChoices(normalizeKey({
     ...question,
     responseType: question.section === "Math" && question.responseType === "spr" ? "spr" : "multiple-choice",
-    correct: Number.isInteger(question.correct) && question.correct >= 0 && question.correct <= 3 ? question.correct : 0,
-    correctText: question.responseType === "spr" ? question.correctText : question.choices[question.correct] ?? question.correctText,
     prompt: question.responseType === "spr" ? question.prompt : stripInlineChoices(question.prompt),
     explanation: cleanExplanation(question.explanation),
-  })).filter((question) => question.responseType === "spr" || Boolean(question.choices[question.correct]));
+  }))).filter((question) => question.responseType === "spr" || Boolean(question.choices[question.correct]));
+
 
   const loadQuestions = async (bias: "balanced" | "easier" | "harder", targetModule = module) => {
     setLoading(true);

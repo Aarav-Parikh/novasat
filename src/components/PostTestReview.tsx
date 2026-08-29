@@ -144,6 +144,19 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
             </div>
             {r.explanation && <p className="mt-2 text-xs text-muted-foreground">{r.explanation}</p>}
 
+            {/* In-depth breakdown still cooking */}
+            {!r.ok && !ins && insightsLoading && (
+              <div className="mt-3 flex items-center gap-2 rounded-lg border border-secondary/30 bg-secondary/5 px-3 py-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-secondary" />
+                In-depth explanation generating…
+              </div>
+            )}
+            {!r.ok && !ins && !insightsLoading && (
+              <div className="mt-3 rounded-lg border border-border/60 px-3 py-2 text-xs text-muted-foreground">
+                In-depth explanation unavailable for this question. Hit Regenerate above to try again.
+              </div>
+            )}
+
             {/* Richer AI insight for wrong answers */}
             {!r.ok && ins && (
               <div className="mt-3 space-y-2 rounded-lg border border-secondary/30 bg-secondary/5 p-3">
