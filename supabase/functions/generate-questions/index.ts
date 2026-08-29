@@ -63,11 +63,34 @@ function sanitizeGeneratedQuestion(q: GeneratedQuestion): GeneratedQuestion | nu
   let correctText = cleanText(q.correctText || choices[correct]);
 
   if (responseType === "multiple-choice") {
-    if (correctText && !choices.some((choice) => choice.toLowerCase() === correctText.toLowerCase())) {
-      choices[correct] = correctText;
-    } else if (!correctText) {
+    if (!correctText) {
       correctText = choices[correct];
+    } else {
+      // The answer TEXT is authoritative: the explanation is written about it.
+      // If the model's index disagrees with it, trust the text and re-point the index.
+      const match = choices.findIndex((choice) => choice.toLowerCase() === correctText.toLowerCase());
+      if (match >= 0) {
+        correct = match;
+      } else {
+        const letter = /^\(?([a-dA-D])[\)\.\:]?$/.exec(correctText)?.[1];
+        const stripped = cleanText(correctText.replace(/^\(?[a-dA-D][\)\.\:]\s*/, ""));
+        const looseIdx = choices.findIndex((choice) => choice.toLowerCase() === stripped.toLowerCase());
+        if (letter) {
+          correct = "abcd".indexOf(letter.toLowerCase());
+          correctText = choices[correct];
+        } else if (looseIdx >= 0) {
+          correct = looseIdx;
+          correctText = choices[correct];
+        } else {
+          // Text names an answer that is not among the choices — plant it.
+          choices[correct] = correctText;
+        }
+      }
     }
+    // A duplicated choice makes grading ambiguous; drop the item.
+    const lowered = choices.map((c) => c.toLowerCase());
+    if (new Set(lowered).size !== lowered.length) return null;
+    if (!choices[correct]) return null;
   } else {
     const candidate = correctText || choices[correct];
     if (!candidate || !numericAnswerPattern.test(candidate)) return null;
