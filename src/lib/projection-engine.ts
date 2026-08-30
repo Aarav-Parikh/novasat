@@ -15,7 +15,7 @@ import { Difficulty, MistakeRecord } from "./novaprep-data";
 import { SessionSummary } from "./novaprep-store";
 
 export type SectionKey = "Reading & Writing" | "Math";
-export type ActivityKind = "drill" | "module" | "full";
+export type ActivityKind = "drill" | "module" | "full" | "official";
 
 export const SECTIONS: SectionKey[] = ["Reading & Writing", "Math"];
 
@@ -23,18 +23,23 @@ export const ACTIVITY_WEIGHT: Record<ActivityKind, number> = {
   drill: 0.1,
   module: 0.4,
   full: 0.9,
+  // A real, proctored test (SAT/PSAT/digital SAT) or a Bluebook practice test is
+  // the strongest evidence there is — it nearly resets the baseline.
+  official: 0.95,
 };
 
 export const IMPACT_LABEL: Record<ActivityKind, string> = {
   drill: "Low Impact",
   module: "Medium Impact",
   full: "High Baseline Pivot",
+  official: "Official Anchor",
 };
 
 export const KIND_LABEL: Record<ActivityKind, string> = {
   drill: "Drill",
   module: "Module",
   full: "Full Simulation",
+  official: "Official / Bluebook Score",
 };
 
 export interface DifficultySplit {
@@ -71,6 +76,14 @@ export interface Activity {
   topic?: string;
   split?: DifficultySplit;
   label?: string;
+  /**
+   * Reported scaled section scores (200-800). Used by `official` activities so
+   * a real test anchors the baseline directly instead of going through accuracy.
+   * Already difficulty-adjusted by the caller.
+   */
+  scaled?: Partial<Record<SectionKey, number>>;
+  /** Difficulty adjustment applied to a Bluebook practice test, in points. */
+  difficultyAdjustment?: number;
 }
 
 export interface AppliedActivity extends Activity {
@@ -213,7 +226,14 @@ export function runProjection(
     // Routing applies to modules and full sims only.
     let routedToEasy = false;
     let sectionCap = SECTION_MAX;
-    if (act.kind !== "drill") {
+    if (act.kind === "official") {
+      // A reported real score already reflects whatever module the student was
+      // routed into, so it lifts any previous easy-module cap.
+      for (const k of targets) {
+        caps[k] = SECTION_MAX;
+        routed[k] = false;
+      }
+    } else if (act.kind !== "drill") {
       const r = routeModule2(act.module1Accuracy ?? act.accuracy);
       routedToEasy = r.routedToEasy;
       sectionCap = r.cap;
@@ -231,11 +251,14 @@ export function runProjection(
     for (const k of SECTIONS) performance[k] = baseline[k];
 
     for (const k of targets) {
-      const perf = accuracyToScaled(act.accuracy, act.kind === "drill" ? SECTION_MAX : sectionCap);
+      const perf =
+        act.kind === "official" && act.scaled?.[k] !== undefined
+          ? clampSection(act.scaled[k] as number)
+          : accuracyToScaled(act.accuracy, act.kind === "drill" || act.kind === "official" ? SECTION_MAX : sectionCap);
       performance[k] = perf;
       let next = baseline[k] + weight * (perf - baseline[k]);
       if (stamina) next -= STAMINA_PENALTY / targets.length + STAMINA_PENALTY / 2;
-      baseline[k] = clampSection(next, act.kind === "drill" ? caps[k] : sectionCap);
+      baseline[k] = clampSection(next, act.kind === "official" ? SECTION_MAX : act.kind === "drill" ? caps[k] : sectionCap);
     }
 
     const delta =
