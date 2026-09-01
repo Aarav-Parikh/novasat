@@ -6,6 +6,9 @@ import { ActivityImpactFeed } from "@/components/projection/ActivityImpactFeed";
 import { LatentAbilityPanel } from "@/components/projection/LatentAbilityPanel";
 import { ProjectionSimulator } from "@/components/projection/ProjectionSimulator";
 import { useNova } from "@/lib/novaprep-store";
+import { BaselineScoresPanel } from "@/components/BaselineScoresPanel";
+import { useBaselineScores } from "@/hooks/useBaselineScores";
+import { baselineToActivity } from "@/lib/baseline-scores";
 import {
   Activity,
   activitiesFromHistory,
@@ -28,6 +31,7 @@ const Projection = () => {
   const sessions = useNova((s) => s.sessions);
   const mistakes = useNova((s) => s.mistakes);
   const [sims, setSims] = useState<Activity[]>(loadSims);
+  const { scores } = useBaselineScores();
 
   useEffect(() => {
     localStorage.setItem(SIM_KEY, JSON.stringify(sims));
@@ -35,10 +39,11 @@ const Projection = () => {
 
   const { result, skills } = useMemo(() => {
     const real = activitiesFromHistory(sessions, mistakes);
-    const all = [...real, ...sims];
+    const official = scores.map(baselineToActivity);
+    const all = [...official, ...real, ...sims];
     const s = skillThetas(mistakes, all);
     return { result: runProjection(all, { skills: s }), skills: s };
-  }, [sessions, mistakes, sims]);
+  }, [sessions, mistakes, sims, scores]);
 
   return (
     <AppLayout>
@@ -51,6 +56,8 @@ const Projection = () => {
             adaptive Module 2 routing.
           </p>
         </header>
+
+        <BaselineScoresPanel />
 
         <div data-page-section="Score Tracker"><ScoreTracker result={result} /></div>
 

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Award, CalendarDays, Flame, Medal, ShieldCheck, Star, Target, Trophy, UserCircle, Zap, Gem, Clock3, BookOpenCheck, Crown, Timer, Backpack, Sparkles, Snowflake, Rocket, Brain, TrendingUp } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
+import { BaselineScoresPanel } from "@/components/BaselineScoresPanel";
 import { GlassCard } from "@/components/GlassCard";
 import { useNova } from "@/lib/novaprep-store";
 import { rankFromXP } from "@/lib/novaprep-data";
@@ -128,6 +130,10 @@ const Profile = () => {
           </div>
         </GlassCard>
 
+        <BaselineScoresPanel />
+
+        <MyReviewCard />
+
         <GlassCard>
           <div className="flex items-center justify-between mb-4">
             <h2 data-page-section="Badges" className="font-display text-2xl font-semibold">Badges</h2>
@@ -165,5 +171,64 @@ const Profile = () => {
     </AppLayout>
   );
 };
+
+/** The review this student left, with the option to delete it. */
+function MyReviewCard() {
+  const { user } = useAuth();
+  const [review, setReview] = useState<{ id: string; rating: number; comment: string | null; created_at: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("reviews")
+      .select("id, rating, comment, created_at")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setReview(data ?? null);
+        setLoading(false);
+      });
+  }, [user]);
+
+  const remove = async () => {
+    if (!review) return;
+    const { error } = await supabase.from("reviews").delete().eq("id", review.id);
+    if (error) {
+      toast({ title: "Couldn't delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    setReview(null);
+    toast({ title: "Review deleted", description: "Your review has been removed." });
+  };
+
+  if (loading || !review) return null;
+
+  return (
+    <GlassCard data-page-section="Your Review">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display text-2xl font-semibold">Your review</h2>
+        <button
+          onClick={remove}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Delete review
+        </button>
+      </div>
+      <div className="flex gap-1">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Star key={i} className={`h-4 w-4 ${i < review.rating ? "fill-warning text-warning" : "text-muted-foreground/40"}`} />
+        ))}
+      </div>
+      {review.comment && (
+        <p className="mt-3 text-sm text-muted-foreground whitespace-pre-wrap">"{review.comment}"</p>
+      )}
+      <div className="mt-2 font-mono text-[11px] text-muted-foreground">
+        {new Date(review.created_at).toLocaleString()}
+      </div>
+    </GlassCard>
+  );
+}
 
 export default Profile;
