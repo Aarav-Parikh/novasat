@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Star } from "lucide-react";
+import { Star, Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { GlassCard } from "@/components/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,15 @@ const Stars = ({ n }: { n: number }) => (
 const AdminReviews = () => {
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const removeReview = async (id: string) => {
+    if (!window.confirm("Delete this review permanently?")) return;
+    setDeleting(id);
+    const { error } = await supabase.from("reviews").delete().eq("id", id);
+    setDeleting(null);
+    if (!error) setReviews((prev) => prev.filter((r) => r.id !== id));
+  };
 
   useEffect(() => {
     supabase.rpc("admin_all_reviews").then(({ data }) => {
@@ -63,7 +72,17 @@ const AdminReviews = () => {
             <GlassCard key={r.id} className="!p-5">
               <div className="flex items-center justify-between gap-3">
                 <div className="font-display font-semibold">{r.display_name || "Anonymous"}</div>
-                <Stars n={r.rating} />
+                <div className="flex items-center gap-2">
+                  <Stars n={r.rating} />
+                  <button
+                    onClick={() => removeReview(r.id)}
+                    disabled={deleting === r.id}
+                    aria-label="Delete review"
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               <div className="text-[11px] text-muted-foreground mt-1 font-mono">
                 {new Date(r.created_at).toLocaleString()}
