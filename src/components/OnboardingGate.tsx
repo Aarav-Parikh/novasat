@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { TutorialModal } from "./TutorialModal";
 import { ReviewPromptModal } from "./ReviewPromptModal";
+import { BaselineOnboardingModal } from "./BaselineOnboardingModal";
 
 /**
  * Tracks logins via a server RPC (column-level UPDATEs on profiles are revoked
@@ -13,6 +14,9 @@ export function OnboardingGate() {
   const { user } = useAuth();
   const [showTutorial, setShowTutorial] = useState(false);
   const [showReview, setShowReview] = useState(false);
+  const [showBaseline, setShowBaseline] = useState(false);
+
+  const baselineKey = user ? `nova_baseline_asked::${user.id}` : "";
 
   useEffect(() => {
     if (!user) return;
@@ -41,6 +45,18 @@ export function OnboardingGate() {
         return;
       }
 
+      // Right after the tutorial → ask for any real scores they already have.
+      if (!localStorage.getItem(baselineKey)) {
+        const { count } = await supabase
+          .from("baseline_scores")
+          .select("id", { count: "exact", head: true });
+        if (!count) {
+          setShowBaseline(true);
+          return;
+        }
+        localStorage.setItem(baselineKey, "1");
+      }
+
       // Second login onwards → ask for a review on EVERY login until they
       // review or explicitly say "don't ask again".
       if (
@@ -56,6 +72,12 @@ export function OnboardingGate() {
   const closeTutorial = async () => {
     setShowTutorial(false);
     await supabase.rpc("mark_tutorial_completed");
+    if (!localStorage.getItem(baselineKey)) setShowBaseline(true);
+  };
+
+  const closeBaseline = () => {
+    setShowBaseline(false);
+    if (baselineKey) localStorage.setItem(baselineKey, "1");
   };
 
   // Only persist the dismissal when the user submitted a review or chose
@@ -66,6 +88,7 @@ export function OnboardingGate() {
   };
 
   if (showTutorial) return <TutorialModal onClose={closeTutorial} />;
+  if (showBaseline) return <BaselineOnboardingModal onClose={closeBaseline} />;
   if (showReview) return <ReviewPromptModal onClose={closeReview} />;
   return null;
 }
