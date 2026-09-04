@@ -1,0 +1,188 @@
+import { Article } from "./types";
+
+export const geometryArticles: Article[] = [
+  {
+    slug: "area-and-volume",
+    section: "Math",
+    domain: "Geometry and Trigonometry",
+    title: "Area and Volume",
+    skill: "Area and volume",
+    readMinutes: 5,
+    summary: "Use the reference-sheet formulas confidently, decompose odd shapes, and handle scale factors in two and three dimensions.",
+    overview: [
+      "The digital SAT gives you a reference sheet with the core area and volume formulas, so the points come from setting problems up rather than from memorization. Rectangle area is length times width, triangle area is half base times height, and circle area is πr² with circumference 2πr.",
+      "For solids, the volume of a prism or cylinder is the base area times the height. Pyramids and cones take one third of that, and a sphere is (4/3)πr³. Read carefully whether a question wants volume, surface area, or a single dimension solved backwards from a given volume.",
+      "Composite figures are the SAT's favorite twist. Break the shape into rectangles, triangles, and circle pieces, compute each, then add or subtract. When a shape is scaled by a factor of k, its area scales by k² and its volume by k³.",
+    ],
+    tips: [
+      "Label every known length on the figure before computing anything.",
+      "For a shaded region, compute the whole shape and subtract the unshaded parts.",
+      "Solve backwards by substituting the known volume and isolating the unknown dimension.",
+      "Convert all measurements to the same unit before multiplying.",
+      "Halving a radius quarters a circle's area — reason with the exponent, not a recomputation.",
+    ],
+    pitfalls: [
+      "Using the diameter where the formula wants the radius.",
+      "Forgetting the one-third factor for a cone or pyramid.",
+      "Scaling volume by the linear factor instead of its cube.",
+    ],
+    problems: [
+      {
+        prompt: "A cylinder has radius 3 and height 10. What is its volume?",
+        choices: ["30π", "60π", "90π", "180π"],
+        correct: 2,
+        explanation: "Volume is πr²h = π(3²)(10) = 90π.",
+      },
+      {
+        prompt: "A square of side 10 has a circle of diameter 10 cut out of it. What is the area of the remaining region?",
+        choices: ["100 − 25π", "100 − 100π", "100 − 10π", "50 − 25π"],
+        correct: 0,
+        explanation: "The square's area is 100. The circle has radius 5, so its area is 25π. The remaining area is 100 − 25π.",
+      },
+      {
+        prompt: "If every dimension of a cube is doubled, the new volume is how many times the original?",
+        choices: ["2", "4", "6", "8"],
+        correct: 3,
+        explanation: "Volume scales by the cube of the linear factor: 2³ = 8.",
+      },
+    ],
+  },
+  {
+    slug: "lines-angles-triangles",
+    section: "Math",
+    domain: "Geometry and Trigonometry",
+    title: "Lines, Angles, and Triangles",
+    skill: "Lines, angles, and triangles",
+    readMinutes: 6,
+    summary: "Apply parallel-line angle rules, triangle angle sums, and similarity to find missing measures.",
+    overview: [
+      "Angles on a line sum to 180 degrees and angles around a point sum to 360. When a transversal crosses parallel lines, corresponding and alternate interior angles are equal, and same-side interior angles are supplementary. Marking every angle you can deduce usually reveals the one you need.",
+      "A triangle's interior angles sum to 180 degrees, and an exterior angle equals the sum of the two remote interior angles. Isosceles triangles have equal base angles, and equilateral triangles have three 60-degree angles.",
+      "Similar triangles have equal angles and proportional sides. They appear whenever a line is drawn parallel to one side of a triangle or when two triangles share an angle inside a larger figure. Congruent triangles go further: equal angles and equal sides.",
+    ],
+    tips: [
+      "Redraw the figure larger and fill in every angle you can determine, not just the target.",
+      "Look for the AA criterion: two matching angles are enough for similarity.",
+      "Write the similarity statement with vertices in matching order so your proportion pairs the right sides.",
+      "Use the exterior-angle shortcut instead of solving for two interior angles separately.",
+      "Figures are drawn to scale unless the problem says otherwise, so an estimate can eliminate choices.",
+    ],
+    pitfalls: [
+      "Assuming lines are parallel when the figure does not say so.",
+      "Pairing non-corresponding sides in a similarity proportion.",
+      "Forgetting that the triangle inequality restricts possible third-side lengths.",
+    ],
+    problems: [
+      {
+        prompt: "Two parallel lines are cut by a transversal. One same-side interior angle measures 65 degrees. What is the measure of the other same-side interior angle?",
+        choices: ["25", "65", "115", "180"],
+        correct: 2,
+        explanation: "Same-side interior angles are supplementary, so the other angle is 180 − 65 = 115 degrees.",
+      },
+      {
+        prompt: "In a triangle, two angles measure 43 and 77 degrees. What is the measure of the exterior angle at the third vertex?",
+        choices: ["60", "77", "110", "120"],
+        correct: 3,
+        explanation: "The exterior angle equals the sum of the two remote interior angles: 43 + 77 = 120 degrees.",
+      },
+      {
+        prompt: "Triangle ABC is similar to triangle DEF, with AB = 6, DE = 9, and BC = 8. What is EF?",
+        choices: ["10", "11", "12", "14"],
+        correct: 2,
+        explanation: "The scale factor is 9/6 = 1.5, so EF = 8 × 1.5 = 12.",
+      },
+    ],
+  },
+  {
+    slug: "right-triangles-and-trigonometry",
+    section: "Math",
+    domain: "Geometry and Trigonometry",
+    title: "Right Triangles and Trigonometry",
+    skill: "Right triangles and trigonometry",
+    readMinutes: 6,
+    summary: "Use the Pythagorean theorem, special right triangles, and SOH-CAH-TOA to find sides and angles.",
+    overview: [
+      "In a right triangle, a² + b² = c², where c is the hypotenuse. Memorizing the common triples 3-4-5, 5-12-13, and 8-15-17 (and their multiples) saves real time, because the SAT reuses them constantly.",
+      "Two special triangles show up repeatedly. A 45-45-90 triangle has sides in the ratio 1 : 1 : √2, and a 30-60-90 triangle has sides in the ratio 1 : √3 : 2, with the shortest side opposite the 30-degree angle.",
+      "Trigonometry on the SAT is SOH-CAH-TOA: sine is opposite over hypotenuse, cosine is adjacent over hypotenuse, tangent is opposite over adjacent. One relationship gets tested often: sin(x°) = cos(90° − x°), because the two acute angles in a right triangle are complementary.",
+    ],
+    tips: [
+      "Identify the hypotenuse first; it is always across from the right angle.",
+      "Check for a known triple before reaching for the Pythagorean theorem.",
+      "Label opposite and adjacent relative to the angle named in the question, not the picture's orientation.",
+      "Use sin x = cos(90 − x) when a question relates two different angles.",
+      "Make sure the calculator is in degree mode when evaluating a trig ratio.",
+    ],
+    pitfalls: [
+      "Treating the longest given side as the hypotenuse when it is actually a leg.",
+      "Mixing up opposite and adjacent after the triangle is rotated.",
+      "Applying the special-triangle ratios to a triangle that is not 45-45-90 or 30-60-90.",
+    ],
+    problems: [
+      {
+        prompt: "A right triangle has legs of length 9 and 12. What is the hypotenuse?",
+        choices: ["13", "15", "18", "21"],
+        correct: 1,
+        explanation: "This is a 3-4-5 triple scaled by 3, so the hypotenuse is 15. Checking: 81 + 144 = 225 = 15².",
+      },
+      {
+        prompt: "In a 30-60-90 triangle, the side opposite the 30-degree angle is 7. What is the hypotenuse?",
+        choices: ["7√2", "7√3", "14", "14√3"],
+        correct: 2,
+        explanation: "The ratio is 1 : √3 : 2 with the shortest side opposite 30 degrees, so the hypotenuse is 2 × 7 = 14.",
+      },
+      {
+        prompt: "If sin(x°) = 0.6, what is cos((90 − x)°)?",
+        choices: ["0.4", "0.6", "0.8", "1.0"],
+        correct: 1,
+        explanation: "Cofunction identity: cos(90 − x) = sin x = 0.6.",
+      },
+    ],
+  },
+  {
+    slug: "circles",
+    section: "Math",
+    domain: "Geometry and Trigonometry",
+    title: "Circles",
+    skill: "Circles",
+    readMinutes: 6,
+    summary: "Work with circle equations, arcs, sectors, radians, and the central-versus-inscribed angle relationship.",
+    overview: [
+      "The standard equation of a circle is (x − h)² + (y − k)² = r², with center (h, k) and radius r. When a question gives an expanded equation, complete the square in x and in y to recover the center and radius.",
+      "Arc length and sector area are proportional slices of the whole circle. An arc cut by a central angle of θ degrees has length (θ/360) · 2πr, and the sector has area (θ/360) · πr². In radians, arc length is rθ and sector area is (1/2)r²θ, with 180 degrees equal to π radians.",
+      "An inscribed angle is half the central angle subtending the same arc. A radius drawn to a point of tangency is perpendicular to the tangent line, which turns many tangent problems into right-triangle problems.",
+    ],
+    tips: [
+      "Read the radius as the square root of the number on the right side of the standard equation.",
+      "Convert degrees to radians by multiplying by π/180.",
+      "Set up arcs and sectors as a fraction of the full circle rather than memorizing extra formulas.",
+      "Draw the radius to any tangent point immediately — the right angle it creates is usually the key.",
+      "Complete the square by halving the coefficient of x and squaring it, and remember to balance the other side.",
+    ],
+    pitfalls: [
+      "Reading (x + 3)² as center x = 3 rather than x = −3.",
+      "Forgetting to take the square root when reading r from r².",
+      "Using the degree formulas while the angle is given in radians.",
+    ],
+    problems: [
+      {
+        prompt: "What is the center of the circle (x + 4)² + (y − 1)² = 25?",
+        choices: ["(4, −1)", "(−4, 1)", "(4, 1)", "(−4, −1)"],
+        correct: 1,
+        explanation: "Standard form uses (x − h) and (y − k), so h = −4 and k = 1. The radius is √25 = 5.",
+      },
+      {
+        prompt: "A circle has radius 6. What is the length of an arc cut by a 60-degree central angle?",
+        choices: ["π", "2π", "6π", "12π"],
+        correct: 1,
+        explanation: "The arc is 60/360 = 1/6 of the circumference 12π, which gives 2π.",
+      },
+      {
+        prompt: "An inscribed angle subtends the same arc as a central angle of 80 degrees. What is the inscribed angle?",
+        choices: ["20", "40", "80", "160"],
+        correct: 1,
+        explanation: "An inscribed angle is half of the central angle on the same arc: 80/2 = 40 degrees.",
+      },
+    ],
+  },
+];
