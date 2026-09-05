@@ -19,6 +19,8 @@ const KIND_QUESTIONS: Record<ActivityKind, number> = {
   drill: 10,
   module: 27,
   full: 98,
+  official: 98,
+
 };
 
 export function ProjectionSimulator({
