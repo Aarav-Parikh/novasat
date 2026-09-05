@@ -77,7 +77,9 @@ export function ProjectionSimulator({
       </p>
 
       <div className="grid gap-2 sm:grid-cols-3">
-        {(Object.keys(ACTIVITY_WEIGHT) as ActivityKind[]).map((k) => (
+        {(Object.keys(ACTIVITY_WEIGHT) as ActivityKind[])
+          .filter((k) => k !== "official")
+          .map((k) => (
           <button
             key={k}
             onClick={() => setKind(k)}
