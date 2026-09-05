@@ -26,6 +26,8 @@ import AdminReviews from "./pages/admin/Reviews.tsx";
 import Quests from "./pages/Quests.tsx";
 import Updates from "./pages/Updates.tsx";
 import Projection from "./pages/Projection.tsx";
+import Articles from "./pages/Articles.tsx";
+import ArticleDetail from "./pages/ArticleDetail.tsx";
 
 const queryClient = new QueryClient();
 
@@ -62,7 +64,8 @@ const App = () => (
               <Route path="/admin/reviews" element={<RequireAuth><RequireAdmin><AdminReviews /></RequireAdmin></RequireAuth>} />
               <Route path="/test/:mode" element={<RequireAuth><TestSession /></RequireAuth>} />
               <Route path="/help" element={<Navigate to="/updates" replace />} />
-              <Route path="/articles" element={<Navigate to="/practice" replace />} />
+              <Route path="/articles" element={<RequireAuth><Articles /></RequireAuth>} />
+              <Route path="/articles/:slug" element={<RequireAuth><ArticleDetail /></RequireAuth>} />
               <Route path="/parent" element={<Navigate to="/app" replace />} />
               <Route path="/clubs" element={<Navigate to="/quests" replace />} />
               <Route path="/clubs/:slug" element={<Navigate to="/quests" replace />} />
