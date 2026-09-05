@@ -19,6 +19,8 @@ const KIND_QUESTIONS: Record<ActivityKind, number> = {
   drill: 10,
   module: 27,
   full: 98,
+  official: 98,
+
 };
 
 export function ProjectionSimulator({
@@ -75,7 +77,9 @@ export function ProjectionSimulator({
       </p>
 
       <div className="grid gap-2 sm:grid-cols-3">
-        {(Object.keys(ACTIVITY_WEIGHT) as ActivityKind[]).map((k) => (
+        {(Object.keys(ACTIVITY_WEIGHT) as ActivityKind[])
+          .filter((k) => k !== "official")
+          .map((k) => (
           <button
             key={k}
             onClick={() => setKind(k)}

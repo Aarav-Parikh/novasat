@@ -14,8 +14,7 @@ import {
   History,
   PanelLeftClose,
   PanelLeftOpen,
-  LineChart,
-} from "lucide-react";
+  LineChart, BookOpen,} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { NovaLogo } from "@/components/NovaLogo";
@@ -25,6 +24,7 @@ const items = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard },
   { to: "/practice", label: "Practice & Plan", icon: Target },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/articles", label: "Skill Library", icon: BookOpen },
   { to: "/projection", label: "Score Projection", icon: LineChart },
   { to: "/quests", label: "Quests", icon: Sparkles },
   { to: "/pet", label: "Pet", icon: PawPrint },
