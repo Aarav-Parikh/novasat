@@ -245,16 +245,51 @@ async function requestQuestionBatch(params: {
   }
 }
 
+let allowedModelsCache: Set<string> | null = null;
+async function fetchAllowedModels(apiKey: string): Promise<Set<string> | null> {
+  if (allowedModelsCache) return allowedModelsCache;
+  try {
+    const resp = await fetch("https://api.mistral.ai/v1/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!resp.ok) return null;
+    const json = await resp.json();
+    const ids = (json?.data ?? [])
+      .filter((m: any) => m?.capabilities?.completion_chat !== false)
+      .map((m: any) => String(m?.id))
+      .filter(Boolean);
+    if (!ids.length) return null;
+    allowedModelsCache = new Set<string>(ids);
+    console.log("Mistral models available:", ids.join(", "));
+    return allowedModelsCache;
+  } catch (e) {
+    console.error("Could not list Mistral models", e);
+    return null;
+  }
+}
+
 async function generateBatchWithFallback(params: {
   apiKey: string;
   systemPrompt: string;
   userPrompt: string;
 }): Promise<GeneratedQuestion[]> {
-  const attempts = [
+  const preferred = [
     { model: "mistral-small-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "ministral-8b-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "open-mistral-nemo", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
     { model: "mistral-medium-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
     { model: "mistral-large-latest", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
-  ] as const;
+  ];
+
+  const allowed = await fetchAllowedModels(params.apiKey);
+  let attempts = allowed ? preferred.filter((a) => allowed.has(a.model)) : preferred;
+  if (!attempts.length && allowed) {
+    const fallbackId = [...allowed].find((id) => /mistral|ministral|magistral/i.test(id) && !/embed|ocr|moderation/i.test(id));
+    attempts = fallbackId
+      ? [{ model: fallbackId, timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." }]
+      : preferred;
+  }
+
 
   let lastError = "AI gateway error";
   for (const attempt of attempts) {
