@@ -193,7 +193,11 @@ async function requestQuestionBatch(params: {
     if (aiResp.status === 429) return { retryable: true as const, rateLimited: true as const, error: "Rate limits exceeded, please try again shortly." };
     if (aiResp.status === 401 || aiResp.status === 403) {
       const detail = await aiResp.text().catch(() => "");
-      console.error("AI auth error", aiResp.status, detail.slice(0, 500), "keyLen", apiKey.length);
+      console.error("AI auth error", aiResp.status, model, detail.slice(0, 300));
+      // The key is fine, this specific model just isn't in the account's tier: try the next model.
+      if (/tier_not_allowed|not available in your subscription/i.test(detail)) {
+        return { retryable: true as const, error: `Model ${model} is not available on this Mistral plan.` };
+      }
       return { retryable: false as const, error: "AI provider authentication failed." };
     }
     if (aiResp.status === 402) return { retryable: false as const, error: "Mistral API credits exhausted. Check billing or quota for your Mistral API key." };
