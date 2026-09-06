@@ -191,7 +191,11 @@ async function requestQuestionBatch(params: {
     });
 
     if (aiResp.status === 429) return { retryable: true as const, rateLimited: true as const, error: "Rate limits exceeded, please try again shortly." };
-    if (aiResp.status === 401 || aiResp.status === 403) return { retryable: false as const, error: "AI provider authentication failed." };
+    if (aiResp.status === 401 || aiResp.status === 403) {
+      const detail = await aiResp.text().catch(() => "");
+      console.error("AI auth error", aiResp.status, detail.slice(0, 500), "keyLen", apiKey.length);
+      return { retryable: false as const, error: "AI provider authentication failed." };
+    }
     if (aiResp.status === 402) return { retryable: false as const, error: "Mistral API credits exhausted. Check billing or quota for your Mistral API key." };
     if (!aiResp.ok) {
       const text = await aiResp.text();
