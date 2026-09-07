@@ -25,11 +25,11 @@ const TOPICS_RW = [
 ];
 
 const AI_URL = "https://api.mistral.ai/v1/chat/completions";
-const BATCH_SIZE = 10;
-const PRIMARY_BATCH_TIMEOUT_MS = 22_000;
-const FALLBACK_BATCH_TIMEOUT_MS = 18_000;
-// Sequential batches to avoid provider per-second rate limits
-const BATCH_CONCURRENCY = 1;
+const BATCH_SIZE = 4;
+const PRIMARY_BATCH_TIMEOUT_MS = 45_000;
+const FALLBACK_BATCH_TIMEOUT_MS = 35_000;
+// Small batches in parallel keep total wall time low on smaller models
+const BATCH_CONCURRENCY = 3;
 const RATE_LIMIT_RETRIES = 2;
 const RATE_LIMIT_BACKOFF_MS = 1500;
 
@@ -184,7 +184,7 @@ async function requestQuestionBatch(params: {
           { role: "user", content: userPrompt },
         ],
         temperature: 0.7,
-        max_tokens: 8000,
+        max_tokens: 3500,
         response_format: { type: "json_object" },
       }),
       signal: controller.signal,
@@ -274,11 +274,9 @@ async function generateBatchWithFallback(params: {
   userPrompt: string;
 }): Promise<GeneratedQuestion[]> {
   const preferred = [
-    { model: "mistral-small-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "mistral-small-latest", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "ministral-14b-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
     { model: "ministral-8b-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
-    { model: "open-mistral-nemo", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
-    { model: "mistral-medium-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
-    { model: "mistral-large-latest", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
   ];
 
   const allowed = await fetchAllowedModels(params.apiKey);
@@ -419,7 +417,7 @@ Deno.serve(async (req) => {
     const batchErrors: string[] = [];
     let hardStop: { status: number; message: string } | null = null;
 
-    const batchResults = await mapWithConcurrency(batchSizes, 2, async (batchCount, batchIndex) => {
+    const runBatch = async (batchCount: number, batchIndex: number) => {
       try {
         return await generateBatchWithFallback({
           apiKey: MISTRAL_API_KEY,
@@ -443,7 +441,9 @@ Deno.serve(async (req) => {
         else if (/credits exhausted/i.test(message)) hardStop = { status: 402, message };
         return [] as GeneratedQuestion[];
       }
-    });
+    };
+
+    const batchResults = await mapWithConcurrency(batchSizes, BATCH_CONCURRENCY, runBatch);
     for (const qs of batchResults) collected.push(...qs);
 
     if (hardStop && collected.length === 0) {
@@ -455,25 +455,39 @@ Deno.serve(async (req) => {
 
     // Enforce section and exact-topic locks server-side. A model instruction alone
     // is not enough: off-scope items must never reach the student.
-    const sectionFiltered = effectiveSection
-      ? collected.filter((q) => q.section === effectiveSection)
-      : collected;
     const normalizeTopic = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-    const topicFiltered = topic
-      ? sectionFiltered.filter((q) => normalizeTopic(q.topic) === normalizeTopic(topic))
-      : sectionFiltered;
+    const applyLocks = (items: GeneratedQuestion[]) => {
+      const bySection = effectiveSection ? items.filter((q) => q.section === effectiveSection) : items;
+      return topic ? bySection.filter((q) => normalizeTopic(q.topic) === normalizeTopic(topic)) : bySection;
+    };
 
-    const questions = topicFiltered.slice(0, count);
+    let usable = applyLocks(collected);
+
+    // One quick top-up pass if a batch dropped out but the rest succeeded.
+    if (!hardStop && usable.length < count) {
+      const missing = Math.min(BATCH_SIZE, count - usable.length);
+      const topUp = await runBatch(missing, batchSizes.length);
+      if (topUp.length) {
+        collected.push(...topUp);
+        usable = applyLocks(collected);
+      }
+    }
+
+    const questions = usable.slice(0, count);
     // Require at least a usable minimum so the session isn't stuck on 1 question
     const minUsable = Math.min(count, Math.max(4, Math.floor(count * 0.4)));
     if (questions.length < minUsable) {
-      const message = batchErrors[0] ?? "Question generation returned too few questions.";
-      const status = /Rate limits exceeded/i.test(message) ? 429 : 500;
-      return new Response(JSON.stringify({ error: message }), {
-        status,
+      const raw = batchErrors[0] ?? "";
+      const rateLimited = /Rate limits exceeded/i.test(raw);
+      const message = rateLimited
+        ? "The question service is busy right now. Please try again in a moment."
+        : "We couldn't finish building this question set. Please try again in a moment.";
+      return new Response(JSON.stringify({ error: message, detail: raw || undefined }), {
+        status: rateLimited ? 429 : 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     return new Response(JSON.stringify({ questions }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
