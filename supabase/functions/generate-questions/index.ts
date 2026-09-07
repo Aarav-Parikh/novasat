@@ -25,11 +25,11 @@ const TOPICS_RW = [
 ];
 
 const AI_URL = "https://api.mistral.ai/v1/chat/completions";
-const BATCH_SIZE = 10;
-const PRIMARY_BATCH_TIMEOUT_MS = 22_000;
-const FALLBACK_BATCH_TIMEOUT_MS = 18_000;
-// Sequential batches to avoid provider per-second rate limits
-const BATCH_CONCURRENCY = 1;
+const BATCH_SIZE = 4;
+const PRIMARY_BATCH_TIMEOUT_MS = 45_000;
+const FALLBACK_BATCH_TIMEOUT_MS = 35_000;
+// Small batches in parallel keep total wall time low on smaller models
+const BATCH_CONCURRENCY = 3;
 const RATE_LIMIT_RETRIES = 2;
 const RATE_LIMIT_BACKOFF_MS = 1500;
 
@@ -184,7 +184,7 @@ async function requestQuestionBatch(params: {
           { role: "user", content: userPrompt },
         ],
         temperature: 0.7,
-        max_tokens: 8000,
+        max_tokens: 3500,
         response_format: { type: "json_object" },
       }),
       signal: controller.signal,
@@ -274,11 +274,9 @@ async function generateBatchWithFallback(params: {
   userPrompt: string;
 }): Promise<GeneratedQuestion[]> {
   const preferred = [
-    { model: "mistral-small-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "mistral-small-latest", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
+    { model: "ministral-14b-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
     { model: "ministral-8b-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
-    { model: "open-mistral-nemo", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Output ONLY valid JSON matching the schema exactly. Do not add commentary." },
-    { model: "mistral-medium-latest", timeoutMs: FALLBACK_BATCH_TIMEOUT_MS, suffix: " Keep wording concise but maintain full SAT-level correctness and rigor." },
-    { model: "mistral-large-latest", timeoutMs: PRIMARY_BATCH_TIMEOUT_MS, suffix: "" },
   ];
 
   const allowed = await fetchAllowedModels(params.apiKey);
