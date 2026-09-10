@@ -74,14 +74,20 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
 
   const merge = (patch: Partial<ReviewData>) =>
     setData((prev) => ({
-      flashcards: patch.flashcards ?? prev?.flashcards ?? [],
-      category_summary: patch.category_summary ?? prev?.category_summary ?? [],
-      concept_breakdowns: patch.concept_breakdowns ?? prev?.concept_breakdowns ?? [],
-      answer_insights: patch.answer_insights ?? prev?.answer_insights ?? [],
+      flashcards: patch.flashcards?.length ? [...(prev?.flashcards ?? []), ...patch.flashcards] : prev?.flashcards ?? [],
+      category_summary: patch.category_summary?.length
+        ? [...(prev?.category_summary ?? []), ...patch.category_summary]
+        : prev?.category_summary ?? [],
+      concept_breakdowns: patch.concept_breakdowns?.length
+        ? [...(prev?.concept_breakdowns ?? []), ...patch.concept_breakdowns]
+        : prev?.concept_breakdowns ?? [],
+      answer_insights: patch.answer_insights?.length
+        ? [...(prev?.answer_insights ?? []), ...patch.answer_insights]
+        : prev?.answer_insights ?? [],
     }));
 
-  // Two smaller parallel generations finish much faster than one giant one,
-  // and each half renders the moment it lands.
+  // Insights are generated in small parallel chunks: the AI can only cover a
+  // handful of questions per request, so a big test needs several requests.
   const fetchReview = async () => {
     if (missed.length === 0) return;
     setError(null);
@@ -89,21 +95,51 @@ export function PostTestReview({ missed, answerKey = [] }: Props) {
     setInsightsLoading(true);
     setStudyLoading(true);
 
-    const run = async (part: "insights" | "study") => {
+    const call = async (part: "insights" | "study", batch: MissedQuestion[]) => {
       const { data: res, error: err } = await supabase.functions.invoke("post-test-review", {
-        body: { missed, part },
+        body: { missed: batch, part },
       });
       if (err) throw err;
+      if ((res as any)?.error) throw new Error((res as any).error);
       merge(res as Partial<ReviewData>);
     };
 
-    const [a, b] = await Promise.allSettled([run("insights"), run("study")]);
+    const CHUNK = 5;
+    const chunks: MissedQuestion[][] = [];
+    for (let i = 0; i < missed.length; i += CHUNK) chunks.push(missed.slice(i, i + CHUNK));
+
+    const runInsights = async () => {
+      let cursor = 0;
+      let anyOk = false;
+      const worker = async () => {
+        while (cursor < chunks.length) {
+          const batch = chunks[cursor++];
+          try {
+            await call("insights", batch);
+            anyOk = true;
+          } catch {
+            try {
+              await call("insights", batch);
+              anyOk = true;
+            } catch { /* leave those questions without insights */ }
+          }
+        }
+      };
+      await Promise.all(Array.from({ length: Math.min(3, chunks.length) }, worker));
+      if (!anyOk) throw new Error("insights failed");
+    };
+
+    const [a, b] = await Promise.allSettled([
+      runInsights().finally(() => setInsightsLoading(false)),
+      call("study", missed.slice(0, 12)).finally(() => setStudyLoading(false)),
+    ]);
     setInsightsLoading(false);
     setStudyLoading(false);
     if (a.status === "rejected" && b.status === "rejected") {
       setError((a.reason as any)?.message ?? "Failed to load review");
     }
   };
+
 
   useEffect(() => { fetchReview(); /* eslint-disable-next-line */ }, []);
 
