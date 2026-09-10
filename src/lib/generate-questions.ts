@@ -80,7 +80,7 @@ export async function generateQuestions(opts: GenerateOptions): Promise<Question
     if (responseType === "multiple-choice" && providedCorrectText && matchingIndex < 0) choices[correct] = providedCorrectText;
     if (responseType === "spr" && providedCorrectText && !choices.some((choice) => normalizeAnswerText(choice) === normalizeAnswerText(providedCorrectText))) choices[correct] = providedCorrectText;
     return {
-      id: `${Date.now()}-${i}`,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${i}`,
       section,
       topic: q.topic,
       difficulty: q.difficulty,
