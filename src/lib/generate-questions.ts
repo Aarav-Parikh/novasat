@@ -19,9 +19,49 @@ const clean = (text?: string) =>
 
 const normalizeAnswerText = (text?: string) => clean(text).toLowerCase().replace(/\s+/g, " ");
 
+// Each edge-function call must finish well inside the 150s gateway idle limit,
+// so large sets (full simulations) are split into small parallel requests.
+const CHUNK_SIZE = 12;
+const CHUNK_CONCURRENCY = 3;
+
+async function runChunks<T>(counts: number[], worker: (n: number, i: number) => Promise<T[]>) {
+  const out: T[][] = new Array(counts.length).fill(null).map(() => []);
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(CHUNK_CONCURRENCY, counts.length) }, async () => {
+    while (cursor < counts.length) {
+      const i = cursor++;
+      try {
+        out[i] = await worker(counts[i], i);
+      } catch (e) {
+        out[i] = [];
+        if (i === 0 && counts.length === 1) throw e;
+      }
+    }
+  });
+  await Promise.all(runners);
+  return out.flat();
+}
+
 export async function generateQuestions(opts: GenerateOptions): Promise<Question[]> {
+  const total = opts.count ?? 6;
+  if (total > CHUNK_SIZE) {
+    const counts: number[] = [];
+    for (let remaining = total; remaining > 0; remaining -= CHUNK_SIZE) {
+      counts.push(Math.min(CHUNK_SIZE, remaining));
+    }
+    const all = await runChunks(counts, (n) => generateQuestions({ ...opts, count: n }));
+    if (all.length === 0) throw new Error("We couldn't build this question set. Please try again in a moment.");
+    const seen = new Set<string>();
+    return all.filter((q) => {
+      const key = q.prompt.trim().toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
   const { data, error } = await supabase.functions.invoke("generate-questions", {
-    body: opts,
+    body: { ...opts, count: total },
   });
   if (error) throw error;
   if ((data as any)?.error) throw new Error((data as any).error);
