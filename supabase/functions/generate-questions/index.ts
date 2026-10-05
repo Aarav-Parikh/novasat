@@ -313,6 +313,95 @@ async function generateBatchWithFallback(params: {
   throw new Error(lastError);
 }
 
+// ---------- Independent answer verification ----------
+const VERIFY_TIMEOUT_MS = 22_000;
+const VERIFY_GROUP = 4;
+
+async function verifyGroup(apiKey: string, items: GeneratedQuestion[]): Promise<GeneratedQuestion[]> {
+  const allowed = await fetchAllowedModels(apiKey);
+  const models = ["mistral-small-latest", "ministral-14b-latest"].filter((m) => !allowed || allowed.has(m));
+  const model = models[0] ?? "mistral-small-latest";
+  const payload = items.map((q, i) => ({
+    id: i,
+    section: q.section,
+    passage: q.passage ?? "",
+    prompt: q.prompt,
+    choices: q.responseType === "spr" ? undefined : { A: q.choices[0], B: q.choices[1], C: q.choices[2], D: q.choices[3] },
+    type: q.responseType,
+  }));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("verify timeout"), VERIFY_TIMEOUT_MS);
+  try {
+    const resp = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model,
+        temperature: 0,
+        max_tokens: 2500,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: `You are a meticulous SAT answer checker. Solve each question yourself, carefully and step by step internally, then output ONLY JSON: {"results":[{"id":number,"answer":"A"|"B"|"C"|"D" or numeric string for spr,"confidence":"high"|"low","single_correct":boolean,"explanation":"1-2 sentence student-facing explanation of why your answer is correct"}]}. single_correct=false if zero or more than one choice is defensible or the question is ambiguous. Use Unicode math, no LaTeX.`,
+          },
+          { role: "user", content: JSON.stringify(payload) },
+        ],
+      }),
+    });
+    if (!resp.ok) {
+      console.warn("verify failed status", resp.status);
+      return items; // pass through unverified
+    }
+    const data = await resp.json();
+    const content = String(data.choices?.[0]?.message?.content ?? "").replace(/```json\s*|```/gi, "");
+    let parsed: any = null;
+    try { parsed = JSON.parse(content); } catch {
+      const s = content.indexOf("{"), e = content.lastIndexOf("}");
+      if (s >= 0 && e > s) { try { parsed = JSON.parse(content.slice(s, e + 1)); } catch { /* ignore */ } }
+    }
+    const results: any[] = Array.isArray(parsed?.results) ? parsed.results : [];
+    if (!results.length) return items;
+    const out: GeneratedQuestion[] = [];
+    items.forEach((q, i) => {
+      const r = results.find((x) => Number(x?.id) === i);
+      if (!r) { out.push(q); return; }
+      if (r.single_correct === false || r.confidence === "low") { console.log("verify drop (ambiguous)"); return; }
+      if (q.responseType === "spr") {
+        const a = cleanText(r.answer);
+        const num = (s: string) => { const m = /^(-?\d*\.?\d+)\/(\d*\.?\d+)$/.exec(s); return m ? Number(m[1]) / Number(m[2]) : Number(s); };
+        if (Math.abs(num(a) - num(q.correctText ?? "")) < 1e-6) out.push(q);
+        else console.log("verify drop (spr mismatch)");
+        return;
+      }
+      const idx = "ABCD".indexOf(String(r.answer ?? "").trim().toUpperCase().charAt(0));
+      if (idx < 0) { out.push(q); return; }
+      if (idx === q.correct) { out.push(q); return; }
+      console.log("verify corrected answer key");
+      out.push({
+        ...q,
+        correct: idx,
+        correctText: q.choices[idx],
+        explanation: cleanText(r.explanation) || q.explanation,
+      });
+    });
+    return out;
+  } catch (e) {
+    console.warn("verify error; passing through", e instanceof Error ? e.message : e);
+    return items;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function verifyQuestions(apiKey: string, items: GeneratedQuestion[]) {
+  const groups: GeneratedQuestion[][] = [];
+  for (let i = 0; i < items.length; i += VERIFY_GROUP) groups.push(items.slice(i, i + VERIFY_GROUP));
+  const res = await mapWithConcurrency(groups, BATCH_CONCURRENCY, (g) => verifyGroup(apiKey, g));
+  return res.flat();
+}
+
 async function mapWithConcurrency<T, R>(items: T[], limit: number, mapper: (item: T, index: number) => Promise<R>) {
   const results: R[] = new Array(items.length);
   let nextIndex = 0;
@@ -421,7 +510,7 @@ Deno.serve(async (req) => {
 
     const runBatch = async (batchCount: number, batchIndex: number) => {
       try {
-        return await generateBatchWithFallback({
+        const generated = await generateBatchWithFallback({
           apiKey: MISTRAL_API_KEY,
           systemPrompt,
           userPrompt: buildUserPrompt({
@@ -435,6 +524,7 @@ Deno.serve(async (req) => {
             sprCount: sprDistribution[batchIndex] ?? 0,
           }),
         });
+        return await verifyQuestions(MISTRAL_API_KEY, generated);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Batch failed";
         console.error(`Batch ${batchIndex + 1}/${batchSizes.length} failed:`, message);
