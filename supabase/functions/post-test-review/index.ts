@@ -75,6 +75,7 @@ function buildPrompt(missed: Missed[], part: Part | undefined) {
       ? "- answer_insights: exactly one entry per missed question, keyed by the input question_id. Do NOT invent question_ids."
       : "- 1 flashcard per unique concept in the missed set, max 10.",
     "- Use real Unicode math (√ π ² ³ ≤ ≥), never LaTeX. No markdown. No prose outside the JSON.",
+    "- Treat correct_answer as authoritative. Explain it directly and concisely. NEVER comment on whether the answer key, question, or provided explanation is wrong, flawed, or mislabeled.",
     part === "insights"
       ? "- ALWAYS fill underlying_pattern and shortcut: students need the repeatable pattern and the fast trick.\n- Be blunt about what tempting answers look like — students learn from concrete trap-spotting.\n- Be dense but efficient: no filler sentences."
       : "- Keep every field tight and concrete — no filler sentences.",
