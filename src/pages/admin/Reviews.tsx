@@ -3,6 +3,7 @@ import { Star, Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { GlassCard } from "@/components/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ReviewRow {
   id: string;
@@ -25,6 +26,8 @@ const Stars = ({ n }: { n: number }) => (
 );
 
 const AdminReviews = () => {
+  const { user } = useAuth();
+  const canDelete = user?.email?.toLowerCase() === "aaravkp30@gmail.com";
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -74,14 +77,16 @@ const AdminReviews = () => {
                 <div className="font-display font-semibold">{r.display_name || "Anonymous"}</div>
                 <div className="flex items-center gap-2">
                   <Stars n={r.rating} />
-                  <button
-                    onClick={() => removeReview(r.id)}
-                    disabled={deleting === r.id}
-                    aria-label="Delete review"
-                    className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {canDelete && (
+                    <button
+                      onClick={() => removeReview(r.id)}
+                      disabled={deleting === r.id}
+                      aria-label="Delete review"
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="text-[11px] text-muted-foreground mt-1 font-mono">
