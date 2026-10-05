@@ -859,6 +859,7 @@ export type Database = {
         }[]
       }
       sync_pet_decay: { Args: never; Returns: Json }
+      sync_streak: { Args: never; Returns: number }
       use_streak_freeze: { Args: never; Returns: Json }
       wake_up_pet: { Args: { _score: number; _total: number }; Returns: Json }
     }

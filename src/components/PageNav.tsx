@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
 
 type Section = { id: string; label: string };
 
 const slug = (s: string) =>
   "sec-" + s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const STORAGE_KEY = "pagenav-collapsed";
 
 /**
  * Per-page "jump to section" sidebar.
@@ -14,6 +17,13 @@ export function PageNav() {
   const location = useLocation();
   const [sections, setSections] = useState<Section[]>([]);
   const [active, setActive] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(STORAGE_KEY) === "1"; } catch { return false; }
+  });
+  const toggle = (v: boolean) => {
+    setCollapsed(v);
+    try { localStorage.setItem(STORAGE_KEY, v ? "1" : "0"); } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     let raf = 0;
@@ -62,11 +72,36 @@ export function PageNav() {
 
   if (sections.length < 2) return null;
 
+  if (collapsed) {
+    return (
+      <aside className="hidden lg:block w-10 shrink-0">
+        <div className="sticky top-8">
+          <button
+            onClick={() => toggle(false)}
+            aria-label="Show page sections"
+            title="Show page sections"
+            className="rounded-md border border-border/60 p-2 text-muted-foreground hover:text-foreground hover:bg-muted/40"
+          >
+            <PanelRightOpen className="h-4 w-4" />
+          </button>
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside className="hidden lg:block w-52 xl:w-56 shrink-0">
       <div className="sticky top-8 pr-2">
-        <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-3 pl-3">
-          On this page
+        <div className="flex items-center justify-between mb-3 pl-3">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">On this page</span>
+          <button
+            onClick={() => toggle(true)}
+            aria-label="Hide page sections"
+            title="Hide page sections"
+            className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted/40"
+          >
+            <PanelRightClose className="h-4 w-4" />
+          </button>
         </div>
         <nav className="space-y-0.5 border-l border-border/60">
           {sections.map((s) => {
