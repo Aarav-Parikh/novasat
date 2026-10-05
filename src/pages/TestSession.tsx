@@ -892,7 +892,10 @@ const TestSession = () => {
                   return (
                     <div key={i} className={["w-full rounded-lg border text-sm transition-all flex items-stretch", isSel ? "border-primary/60 bg-primary/10" : "border-border bg-muted/30"].join(" ")}>
                       <button
-                        onClick={() => setAnswers((a) => ({ ...a, [q.id]: i }))}
+                        onClick={() => setAnswers((a) => {
+                          if (a[q.id] === i) { const { [q.id]: _removed, ...rest } = a; return rest; }
+                          return { ...a, [q.id]: i };
+                        })}
                         className={`flex-1 text-left px-4 py-3.5 flex items-start gap-3 ${elimTag ? "line-through opacity-50" : ""}`}
                       >
                         <span className="font-mono text-xs text-muted-foreground mt-0.5">{String.fromCharCode(65 + i)}</span>

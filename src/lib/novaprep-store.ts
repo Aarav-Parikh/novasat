@@ -393,26 +393,11 @@ export const useNova = create<NovaState>((set, get) => ({
     });
 
     if (profileData) {
-      // Streak reset
-      const lastSessionDate = (sessionsRes.data as SessionSummary[] | null)?.[0]
-        ?.created_at?.slice(0, 10);
-      const currentStreak = (profileData as any).streak ?? 0;
-      if (currentStreak > 0) {
-        const todayMs = new Date(`${today}T00:00:00`).getTime();
-        const lastMs = lastSessionDate
-          ? new Date(`${lastSessionDate}T00:00:00`).getTime()
-          : null;
-        const diffDays =
-          lastMs === null ? Infinity : Math.round((todayMs - lastMs) / 86400000);
-        if (diffDays > 1) {
-          const { data: zeroed } = await supabase
-            .from("profiles")
-            .update({ streak: 0 })
-            .eq("id", userId)
-            .select()
-            .single();
-          if (zeroed) set({ profile: normalizeProfile(zeroed) });
-        }
+      // Streak reset (server-side): missing a day drops the streak to 0.
+      const { data: synced } = await (supabase as any).rpc("sync_streak");
+      if (typeof synced === "number" && synced !== ((profileData as any).streak ?? 0)) {
+        const cur = get().profile;
+        if (cur) set({ profile: { ...cur, streak: synced } });
       }
       await get().syncPetDecay();
     }
@@ -530,7 +515,6 @@ export const useNova = create<NovaState>((set, get) => ({
       profile: {
         ...profile,
         xp: profile.xp + gained,
-        streak: Math.max(1, profile.streak || 0),
       },
     });
     return gained;
